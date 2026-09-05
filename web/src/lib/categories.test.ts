@@ -6,7 +6,7 @@ const vocabs: Array<[string, readonly string[]]> = [
   ['BUSINESS_CATEGORIES', BUSINESS_CATEGORIES],
 ]
 
-describe.each(vocabs)('%s controlled vocabulary', (name, vocab) => {
+describe.each(vocabs)('%s controlled vocabulary', (_name, vocab) => {
   it('is non-empty', () => {
     expect(vocab.length).toBeGreaterThan(0)
   })

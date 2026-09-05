@@ -8,8 +8,8 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
-    /* Path alias: @/* -> src/* */
-    "baseUrl": ".",
+    /* Path alias: @/* -> src/*. No baseUrl — deprecated in TS 6; `paths`
+       entries resolve relative to this tsconfig's directory. */
     "paths": { "@/*": ["./src/*"] },
 
     /* Bundler mode */
