@@ -1,10 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// We don't throw when unset — that would blank the whole page. App.tsx surfaces
-// the missing-config state in the UI instead.
 export const isSupabaseConfigured = Boolean(url && anonKey)
 
 if (!isSupabaseConfigured) {
@@ -13,4 +11,12 @@ if (!isSupabaseConfigured) {
   )
 }
 
-export const supabase = createClient(url ?? '', anonKey ?? '')
+// createClient() throws synchronously on an empty URL/key, which would blank the
+// whole page at import time. When unconfigured we hand it harmless placeholders
+// so the module loads and App.tsx can surface the unconfigured state in the UI.
+// All real usage is gated on isSupabaseConfigured, so the placeholder client is
+// never actually called.
+export const supabase: SupabaseClient = createClient(
+  url ?? 'http://localhost:54321',
+  anonKey ?? 'placeholder-anon-key',
+)

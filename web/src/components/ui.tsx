@@ -1,0 +1,217 @@
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react'
+import type { BookingStatus } from '@/lib/types'
+
+// Shared UI primitives (Tailwind, indigo-600 primary). Import from '@/components/ui'.
+export function cn(...parts: Array<string | false | null | undefined>): string {
+  return parts.filter(Boolean).join(' ')
+}
+
+export function Spinner({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-block animate-spin rounded-full border-2 border-current border-t-transparent',
+        className ?? 'h-5 w-5',
+      )}
+      role="status"
+      aria-label="Loading"
+    />
+  )
+}
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  loading?: boolean
+}
+
+export function Button({
+  variant = 'primary',
+  loading = false,
+  disabled,
+  className,
+  children,
+  ...rest
+}: ButtonProps) {
+  const base =
+    'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500'
+  const variants: Record<string, string> = {
+    primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
+    secondary: 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
+    ghost: 'text-gray-700 hover:bg-gray-100',
+  }
+  return (
+    <button className={cn(base, variants[variant], className)} disabled={disabled || loading} {...rest}>
+      {loading && <Spinner className="h-4 w-4" />}
+      {children}
+    </button>
+  )
+}
+
+const fieldClasses =
+  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'
+
+export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={cn(fieldClasses, className)} {...props} />
+}
+
+export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={cn(fieldClasses, className)} {...props} />
+}
+
+export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select className={cn(fieldClasses, className)} {...props} />
+}
+
+export function Field({
+  label,
+  error,
+  hint,
+  children,
+}: {
+  label?: string
+  error?: string
+  hint?: string
+  children: ReactNode
+}) {
+  return (
+    <label className="block space-y-1">
+      {label && <span className="block text-sm font-medium text-gray-700">{label}</span>}
+      {children}
+      {hint && !error && <span className="block text-xs text-gray-500">{hint}</span>}
+      {error && <span className="block text-xs text-red-600">{error}</span>}
+    </label>
+  )
+}
+export function Card({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('rounded-xl border border-gray-200 bg-white p-5 shadow-sm', className)}>
+      {children}
+    </div>
+  )
+}
+
+export function Alert({
+  kind = 'error',
+  children,
+}: {
+  kind?: 'error' | 'success' | 'info'
+  children: ReactNode
+}) {
+  const map = {
+    error: 'bg-red-50 text-red-700 border-red-200',
+    success: 'bg-green-50 text-green-700 border-green-200',
+    info: 'bg-blue-50 text-blue-700 border-blue-200',
+  }
+  return (
+    <div className={cn('rounded-lg border px-3 py-2 text-sm', map[kind])} role="alert">
+      {children}
+    </div>
+  )
+}
+
+export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center">
+      <p className="font-medium text-gray-700">{title}</p>
+      {children && <div className="mt-1 text-sm text-gray-500">{children}</div>}
+    </div>
+  )
+}
+
+export function PageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string
+  subtitle?: string
+  action?: ReactNode
+}) {
+  return (
+    <div className="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+const STATUS_STYLES: Record<BookingStatus, string> = {
+  REQUESTED: 'bg-amber-100 text-amber-800',
+  COUNTERED: 'bg-purple-100 text-purple-800',
+  ACCEPTED: 'bg-blue-100 text-blue-800',
+  DECLINED: 'bg-gray-200 text-gray-700',
+  FUNDED: 'bg-indigo-100 text-indigo-800',
+  DELIVERED: 'bg-cyan-100 text-cyan-800',
+  COMPLETED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-gray-200 text-gray-700',
+  DISPUTED: 'bg-red-100 text-red-800',
+}
+
+export function StatusBadge({ status }: { status: BookingStatus }) {
+  return (
+    <span
+      className={cn(
+        'inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold',
+        STATUS_STYLES[status],
+      )}
+    >
+      {status}
+    </span>
+  )
+}
+
+export function Stars({ rating, count }: { rating: number; count?: number }) {
+  const full = Math.round(rating)
+  return (
+    <span className="inline-flex items-center gap-1 text-sm" aria-label={`${rating.toFixed(1)} out of 5`}>
+      <span className="text-amber-500">
+        {'★'.repeat(full)}
+        {'☆'.repeat(5 - full)}
+      </span>
+      <span className="text-gray-500">
+        {rating > 0 ? rating.toFixed(1) : 'New'}
+        {typeof count === 'number' ? ` (${count})` : ''}
+      </span>
+    </span>
+  )
+}
+
+export function Avatar({
+  name,
+  url,
+  size = 40,
+}: {
+  name: string
+  url?: string | null
+  size?: number
+}) {
+  const initial = name?.trim()?.charAt(0)?.toUpperCase() || '?'
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={name}
+        className="rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+  return (
+    <span
+      className="inline-grid place-items-center rounded-full bg-indigo-600 font-bold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.4 }}
+    >
+      {initial}
+    </span>
+  )
+}

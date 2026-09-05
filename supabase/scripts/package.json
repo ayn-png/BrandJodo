@@ -1,0 +1,13 @@
+{
+  "name": "ainfluencer-db-scripts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Dev-only DB migration runner: applies supabase/migrations/*.sql over a direct Postgres connection.",
+  "scripts": {
+    "migrate": "node migrate.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
