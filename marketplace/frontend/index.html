@@ -1,0 +1,1114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AInfluencer — Local Creator & Brand Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f19;
+    --surface: #141b2d;
+    --surface-card: #1d263b;
+    --surface-border: #2e3a59;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.15);
+    --secondary: #10b981;
+    --secondary-hover: #059669;
+    --accent: #f59e0b;
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+    --text-dim: #6b7280;
+    --danger: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.15);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    --font: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header & Navigation */
+  header {
+    background: rgba(20, 27, 45, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--surface-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 16px 24px;
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  .logo-text { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; }
+  .logo-text span { color: var(--primary); }
+
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .user-badge {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .role-pill {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .role-pill.CLIENT { background: rgba(16, 185, 129, 0.2); color: var(--secondary); border: 1px solid var(--secondary); }
+  .role-pill.INFLUENCER { background: rgba(99, 102, 241, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+
+  .apibar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .apibar input {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    width: 170px;
+  }
+
+  /* Main Container */
+  main {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    flex: 1;
+  }
+
+  /* Navigation Tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--surface-border);
+    padding-bottom: 12px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface-card); }
+  .tab-btn.active { color: #fff; background: var(--primary); font-weight: 700; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Hero & Onboarding Section */
+  .onboard-hero {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 36px;
+  }
+  .onboard-hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 12px; }
+  .onboard-hero p { color: var(--text-muted); font-size: 1.05rem; }
+
+  .role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 768px) { .role-selector { grid-template-columns: 1fr; } }
+
+  .role-card {
+    background: var(--surface);
+    border: 2px solid var(--surface-border);
+    border-radius: var(--radius);
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .role-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+  }
+  .role-card.selected {
+    border-color: var(--primary);
+    background: var(--surface-card);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  .role-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  .role-card.client .role-icon { background: rgba(16, 185, 129, 0.15); color: var(--secondary); }
+  .role-card.influencer .role-icon { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+  .role-card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+  .role-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; }
+
+  /* Form Elements & Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .card-title { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.92rem;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+  textarea { min-height: 80px; resize: vertical; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .row-2, .row-3 { grid-template-columns: 1fr; } }
+
+  /* Buttons */
+  .btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 11px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+  .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .btn-secondary { background: var(--secondary); color: #fff; }
+  .btn-secondary:hover { background: var(--secondary-hover); }
+  .btn-outline { background: transparent; border: 1px solid var(--surface-border); color: var(--text); }
+  .btn-outline:hover { background: var(--surface-card); border-color: var(--text-muted); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+  /* Messages & Alerts */
+  .msg {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    margin-top: 14px;
+    display: none;
+  }
+  .msg.ok { background: rgba(16, 185, 129, 0.15); color: var(--secondary); border: 1px solid var(--secondary); display: block; }
+  .msg.err { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); display: block; }
+
+  /* Creator Cards Grid */
+  .creator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .creator-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+  }
+  .creator-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .creator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .creator-name { font-size: 1.1rem; font-weight: 700; }
+  .creator-id { font-size: 0.75rem; color: var(--text-dim); font-family: monospace; }
+  .rating-badge {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .creator-meta { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; }
+  .creator-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .tag {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    padding: 3px 9px;
+    border-radius: 12px;
+  }
+
+  .rate-card-list {
+    background: var(--bg);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .rate-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--surface-border);
+  }
+  .rate-item:last-child { border-bottom: none; }
+  .rate-price { font-weight: 700; color: var(--secondary); }
+
+  /* Booking & Escrow Status Stepper */
+  .booking-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .stepper {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    position: relative;
+  }
+  .stepper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--surface-border);
+    z-index: 1;
+    transform: translateY(-50%);
+  }
+  .step-item {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    padding: 0 8px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .step-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--surface-card);
+    border: 2px solid var(--surface-border);
+    margin: 0 auto 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  .step-item.active .step-circle { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .step-item.completed .step-circle { background: var(--secondary); border-color: var(--secondary); color: #fff; }
+  .step-item.active { color: var(--text); font-weight: 600; }
+  .step-item.completed { color: var(--secondary); font-weight: 600; }
+
+  /* Chat Drawer Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 550px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow);
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--surface-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
+
+  .chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-bottom: 14px;
+  }
+  .chat-bubble {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    max-width: 80%;
+    font-size: 0.88rem;
+  }
+  .chat-bubble.mine {
+    align-self: flex-end;
+    background: var(--primary-light);
+    border-color: var(--primary);
+  }
+  .chat-sender { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 700; }
+
+  .status-pill {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-pill.REQUESTED { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+  .status-pill.ACCEPTED, .status-pill.FUNDED { background: rgba(16, 185, 129, 0.2); color: var(--secondary); border: 1px solid var(--secondary); }
+  .status-pill.DELIVERED { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6; }
+  .status-pill.COMPLETED { background: var(--primary); color: #fff; }
+  .status-pill.DECLINED { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">A</div>
+      <div class="logo-text">AInfluencer <span>Marketplace</span></div>
+    </a>
+
+    <div class="user-bar">
+      <div id="userBadge" class="user-badge" style="display:none;">
+        <span id="activeUserName">Guest</span>
+        <span id="activeUserRole" class="role-pill CLIENT">CLIENT</span>
+        <button class="btn btn-outline btn-sm" onclick="switchUserPrompt()">Switch User</button>
+      </div>
+      <div class="apibar">
+        API: <input id="apiBase" value="http://localhost:8080" />
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- TAB NAVIGATION -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="onboard">⚡ Onboarding & Role</button>
+    <button class="tab-btn" data-tab="discover">🔍 Discover Creators</button>
+    <button class="tab-btn" data-tab="bookings">📋 My Bookings & Escrow</button>
+  </nav>
+
+  <!-- 1. ONBOARDING & ROLE SETUP -->
+  <section id="onboard" class="panel active">
+    <div class="onboard-hero">
+      <h1>Welcome to AInfluencer Platform</h1>
+      <p>Select your role to register your profile or log in with your existing User ID.</p>
+    </div>
+
+    <!-- Role Selection Cards -->
+    <div class="role-selector">
+      <div class="role-card client selected" id="cardClient" onclick="selectRole('CLIENT')">
+        <div class="role-icon">🏢</div>
+        <h2>Business / Brand (Client)</h2>
+        <p>Hire top local creators, set up deliverables with transparent pricing, and pay safely with escrow protection.</p>
+      </div>
+
+      <div class="role-card influencer" id="cardInfluencer" onclick="selectRole('INFLUENCER')">
+        <div class="role-icon">📸</div>
+        <h2>Creator / Influencer</h2>
+        <p>Showcase your portfolio, set your custom rate cards, receive booking requests, and get paid upon approval.</p>
+      </div>
+    </div>
+
+    <!-- CLIENT REGISTRATION FORM -->
+    <div id="clientFormSection" class="card">
+      <div class="card-header">
+        <div class="card-title">🏢 Register Business Account</div>
+        <div class="apibar">Quick Login: <input id="login_client_id" placeholder="User ID (e.g. user_1)" style="width:130px;" /> <button class="btn btn-sm btn-outline" onclick="loginUser('login_client_id')">Log In</button></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Business Name</label>
+          <input id="c_name" placeholder="e.g. Cafe Mocha">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input id="c_email" placeholder="cafe@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Business Category</label>
+        <input id="c_category" placeholder="Food & Beverage, Beauty, Fitness, Retail...">
+      </div>
+      <button class="btn btn-secondary" onclick="createClient()">Create Business Profile & Start</button>
+      <div id="c_msg" class="msg"></div>
+    </div>
+
+    <!-- INFLUENCER REGISTRATION FORM -->
+    <div id="influencerFormSection" class="card" style="display:none;">
+      <div class="card-header">
+        <div class="card-title">📸 Create Creator Profile</div>
+        <div class="apibar">Quick Login: <input id="login_inf_id" placeholder="User ID (e.g. user_2)" style="width:130px;" /> <button class="btn btn-sm btn-outline" onclick="loginUser('login_inf_id')">Log In</button></div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Full Name / Handle</label>
+          <input id="i_name" placeholder="e.g. Priya K">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input id="i_email" placeholder="priya@example.com">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>City / Location</label>
+          <input id="i_location" placeholder="Nashik">
+        </div>
+        <div class="form-group">
+          <label>Follower Count</label>
+          <input id="i_followers" type="number" placeholder="15000">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Niches (comma separated)</label>
+          <input id="i_niches" placeholder="food, lifestyle, travel">
+        </div>
+        <div class="form-group">
+          <label>Platforms (comma separated)</label>
+          <input id="i_platforms" placeholder="Instagram, YouTube">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Bio & Creator Pitch</label>
+        <textarea id="i_bio" placeholder="Short bio describing your audience and content style..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Initial Rate Card (Deliverable : Price in ₹, one per line)</label>
+        <textarea id="i_ratecard" placeholder="1 Instagram Reel : 3000&#10;1 Story Set : 1200&#10;Reel + 2 Stories Bundle : 4000"></textarea>
+      </div>
+      <button class="btn" onclick="createInfluencer()">Create Creator Profile & Start</button>
+      <div id="i_msg" class="msg"></div>
+    </div>
+  </section>
+
+  <!-- 2. DISCOVER CREATORS & BOOK -->
+  <section id="discover" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔍 Search & Filter Creators</div>
+        <button class="btn btn-sm btn-outline" onclick="searchInfluencers()">Refresh List</button>
+      </div>
+      <div class="row-3">
+        <div class="form-group">
+          <label>Location</label>
+          <input id="s_location" placeholder="e.g. Nashik">
+        </div>
+        <div class="form-group">
+          <label>Niche</label>
+          <input id="s_niche" placeholder="e.g. food">
+        </div>
+        <div class="form-group">
+          <label>Max Budget (₹)</label>
+          <input id="s_maxprice" type="number" placeholder="5000">
+        </div>
+      </div>
+      <button class="btn" onclick="searchInfluencers()">Search Creators</button>
+      <div id="s_msg" class="msg"></div>
+    </div>
+
+    <!-- Results Grid -->
+    <div id="s_results" class="creator-grid"></div>
+  </section>
+
+  <!-- 3. MY BOOKINGS & ESCROW -->
+  <section id="bookings" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📋 Track Bookings & Escrow Payments</div>
+        <div style="display:flex; gap:10px;">
+          <input id="t_bkid" placeholder="Booking ID (e.g. bk_1)" style="width:180px;" />
+          <button class="btn btn-sm" onclick="loadBookingById()">Load Booking</button>
+          <button class="btn btn-sm btn-outline" onclick="loadUserBookings()">Refresh My Bookings</button>
+        </div>
+      </div>
+      <div id="t_msg" class="msg"></div>
+    </div>
+
+    <div id="userBookingsList"></div>
+  </section>
+</main>
+
+<!-- BOOKING MODAL -->
+<div id="bookingModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.1rem; font-weight:700;">Send Booking Request</h3>
+      <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Selected Creator</label>
+        <input id="mbk_inf_display" readonly style="opacity:0.8;">
+        <input id="mbk_inf" type="hidden">
+      </div>
+      <div class="form-group">
+        <label>Your Business ID (Client)</label>
+        <input id="mbk_client" placeholder="user_1">
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Deliverable</label>
+          <input id="mbk_deliverable" placeholder="1 Reel">
+        </div>
+        <div class="form-group">
+          <label>Agreed Price (₹)</label>
+          <input id="mbk_price" type="number" placeholder="3000">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Target Deadline</label>
+          <input id="mbk_deadline" type="date">
+        </div>
+        <div class="form-group">
+          <label>Usage Rights</label>
+          <input id="mbk_usage" placeholder="30-day Instagram Repost">
+        </div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="submitBookingModal()">Send Official Request</button>
+      <div id="mbk_msg" class="msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT MODAL -->
+<div id="chatModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.1rem; font-weight:700;">Campaign In-App Chat</h3>
+      <button class="modal-close" onclick="closeChatModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="chatMessages" class="chat-box"></div>
+      <div class="form-group" style="display:flex; gap:10px; margin-bottom:0;">
+        <input id="chatInput" placeholder="Type a message...">
+        <button class="btn" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let activeUser = JSON.parse(localStorage.getItem('ainfluencer_user') || 'null');
+let currentBookingIdForChat = null;
+
+// Tab Navigation
+document.querySelectorAll('.nav-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tabs button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    $(tab).classList.add('active');
+    if (tab === 'discover') searchInfluencers();
+    if (tab === 'bookings') loadUserBookings();
+  });
+});
+
+function apiBase() { return $('apiBase').value.replace(/\/$/, ''); }
+
+async function api(method, path, body) {
+  const res = await fetch(apiBase() + path, {
+    method,
+    headers: {'Content-Type': 'application/json'},
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+
+function showMsg(id, text, ok) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+function updateActiveUserBadge() {
+  if (activeUser) {
+    $('userBadge').style.display = 'flex';
+    $('activeUserName').textContent = activeUser.name || activeUser.id;
+    $('activeUserRole').textContent = activeUser.role;
+    $('activeUserRole').className = 'role-pill ' + activeUser.role;
+  } else {
+    $('userBadge').style.display = 'none';
+  }
+}
+
+function selectRole(role) {
+  if (role === 'CLIENT') {
+    $('cardClient').classList.add('selected');
+    $('cardInfluencer').classList.remove('selected');
+    $('clientFormSection').style.display = 'block';
+    $('influencerFormSection').style.display = 'none';
+  } else {
+    $('cardInfluencer').classList.add('selected');
+    $('cardClient').classList.remove('selected');
+    $('influencerFormSection').style.display = 'block';
+    $('clientFormSection').style.display = 'none';
+  }
+}
+
+function setActiveUser(user) {
+  activeUser = user;
+  localStorage.setItem('ainfluencer_user', JSON.stringify(user));
+  updateActiveUserBadge();
+}
+
+function switchUserPrompt() {
+  const id = prompt('Enter existing User ID to switch (e.g. user_1):');
+  if (!id) return;
+  loginUserById(id);
+}
+
+async function loginUser(inputId) {
+  const id = $(inputId).value.trim();
+  if (!id) return alert('Please enter a User ID');
+  await loginUserById(id);
+}
+
+async function loginUserById(id) {
+  try {
+    const user = await api('GET', `/api/users/${id}`);
+    setActiveUser(user);
+    alert(`Logged in as ${user.name} (${user.role})`);
+    if (user.role === 'CLIENT') {
+      document.querySelector('[data-tab="discover"]').click();
+    } else {
+      document.querySelector('[data-tab="bookings"]').click();
+    }
+  } catch (e) {
+    alert('User not found: ' + e.message);
+  }
+}
+
+// Onboarding: Create Client
+async function createClient() {
+  try {
+    const u = await api('POST', '/api/users', {
+      name: $('c_name').value,
+      email: $('c_email').value,
+      role: 'CLIENT',
+      businessCategory: $('c_category').value
+    });
+    setActiveUser(u);
+    showMsg('c_msg', `Business profile created successfully! Account ID: ${u.id}`, true);
+    setTimeout(() => document.querySelector('[data-tab="discover"]').click(), 1200);
+  } catch (e) { showMsg('c_msg', e.message, false); }
+}
+
+// Onboarding: Create Influencer
+async function createInfluencer() {
+  try {
+    const u = await api('POST', '/api/users', {
+      name: $('i_name').value,
+      email: $('i_email').value,
+      role: 'INFLUENCER'
+    });
+    await api('POST', `/api/influencers/${u.id}/profile`, {
+      bio: $('i_bio').value,
+      location: $('i_location').value,
+      niches: $('i_niches').value.split(',').map(s => s.trim()).filter(Boolean),
+      platforms: $('i_platforms').value.split(',').map(s => s.trim()).filter(Boolean),
+      followerCount: $('i_followers').value ? Number($('i_followers').value) : null,
+      portfolio: []
+    });
+    const items = $('i_ratecard').value.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+      const parts = line.split(':');
+      return { deliverable: parts[0].trim(), price: Number(parts[1] ? parts[1].trim() : 0) };
+    });
+    if (items.length) await api('POST', `/api/influencers/${u.id}/ratecard`, { items });
+    setActiveUser(u);
+    showMsg('i_msg', `Creator profile created! Creator ID: ${u.id}`, true);
+    setTimeout(() => document.querySelector('[data-tab="bookings"]').click(), 1200);
+  } catch (e) { showMsg('i_msg', e.message, false); }
+}
+
+// Discover Creators Search
+async function searchInfluencers() {
+  try {
+    const params = new URLSearchParams();
+    if ($('s_location').value) params.set('location', $('s_location').value);
+    if ($('s_niche').value) params.set('niche', $('s_niche').value);
+    if ($('s_maxprice').value) params.set('maxPrice', $('s_maxprice').value);
+
+    const results = await api('GET', '/api/influencers?' + params.toString());
+    showMsg('s_msg', `${results.length} creator(s) found`, true);
+
+    $('s_results').innerHTML = results.map(u => `
+      <div class="creator-card">
+        <div>
+          <div class="creator-header">
+            <div>
+              <div class="creator-name">${u.name}</div>
+              <div class="creator-id">${u.id}</div>
+            </div>
+            <div class="rating-badge">★ ${(u.avgRating || 0).toFixed(1)} (${u.reviewCount || 0})</div>
+          </div>
+          <div class="creator-meta">📍 ${u.location || 'Remote'} · ${(u.followerCount || 0).toLocaleString()} followers</div>
+          <div class="creator-tags">
+            ${(u.niches || []).map(n => `<span class="tag">${n}</span>`).join('')}
+            ${(u.platforms || []).map(p => `<span class="tag">${p}</span>`).join('')}
+          </div>
+          <div class="rate-card-list">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:4px;">RATE CARD</div>
+            ${(u.rateCard || []).map(r => `
+              <div class="rate-item">
+                <span>${r.deliverable}</span>
+                <span class="rate-price">₹${r.price}</span>
+              </div>
+            `).join('') || '<div class="rate-item" style="color:var(--text-dim)">No fixed rates listed</div>'}
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="width:100%; margin-top:12px;" onclick="openBookingModal('${u.id}', '${u.name}', '${u.rateCard?.[0]?.deliverable || ''}', ${u.rateCard?.[0]?.price || 0})">
+          Book Creator
+        </button>
+      </div>
+    `).join('');
+  } catch (e) { showMsg('s_msg', e.message, false); }
+}
+
+// Modal Handlers
+function openBookingModal(infId, infName, defaultDeliverable, defaultPrice) {
+  $('mbk_inf_display').value = `${infName} (${infId})`;
+  $('mbk_inf').value = infId;
+  $('mbk_client').value = activeUser?.role === 'CLIENT' ? activeUser.id : '';
+  $('mbk_deliverable').value = defaultDeliverable;
+  $('mbk_price').value = defaultPrice;
+  
+  // Set default deadline to 7 days from now
+  const d = new Date(); d.setDate(d.getDate() + 7);
+  $('mbk_deadline').value = d.toISOString().split('T')[0];
+  $('mbk_usage').value = '30-day Instagram repost';
+  
+  $('bookingModal').classList.add('active');
+}
+
+function closeBookingModal() { $('bookingModal').classList.remove('active'); }
+
+async function submitBookingModal() {
+  try {
+    const b = await api('POST', '/api/bookings', {
+      clientId: $('mbk_client').value,
+      influencerId: $('mbk_inf').value,
+      deliverable: $('mbk_deliverable').value,
+      price: Number($('mbk_price').value),
+      deadline: $('mbk_deadline').value,
+      usageRights: $('mbk_usage').value
+    });
+    showMsg('mbk_msg', `Request sent! Booking ID: ${b.id}`, true);
+    setTimeout(() => {
+      closeBookingModal();
+      document.querySelector('[data-tab="bookings"]').click();
+    }, 1000);
+  } catch (e) { showMsg('mbk_msg', e.message, false); }
+}
+
+// Bookings & Escrow Dashboard
+async function loadUserBookings() {
+  if (!activeUser) return showMsg('t_msg', 'Please log in or select a user profile first.', false);
+  try {
+    const bookings = await api('GET', `/api/users/${activeUser.id}/bookings`);
+    showMsg('t_msg', `Found ${bookings.length} booking(s) for your account`, true);
+    renderBookingsList(bookings);
+  } catch (e) { showMsg('t_msg', e.message, false); }
+}
+
+async function loadBookingById() {
+  const id = $('t_bkid').value.trim();
+  if (!id) return alert('Enter a booking ID');
+  try {
+    const b = await api('GET', `/api/bookings/${id}`);
+    renderBookingsList([b]);
+  } catch (e) { showMsg('t_msg', e.message, false); }
+}
+
+function renderBookingsList(bookings) {
+  if (!bookings || !bookings.length) {
+    $('userBookingsList').innerHTML = '<div class="card" style="text-align:center; color:var(--text-muted);">No bookings found yet.</div>';
+    return;
+  }
+
+  $('userBookingsList').innerHTML = bookings.map(b => {
+    const isClient = activeUser?.id === b.clientId;
+    const isInfluencer = activeUser?.id === b.influencerId;
+
+    // Escrow Stepper Status Calculation
+    const steps = [
+      { name: 'Requested', done: true, active: b.status === 'REQUESTED' },
+      { name: 'Accepted', done: ['ACCEPTED','FUNDED','DELIVERED','COMPLETED'].includes(b.status), active: b.status === 'ACCEPTED' },
+      { name: 'Funded', done: ['FUNDED','DELIVERED','COMPLETED'].includes(b.status), active: b.status === 'FUNDED' },
+      { name: 'Delivered', done: ['DELIVERED','COMPLETED'].includes(b.status), active: b.status === 'DELIVERED' },
+      { name: 'Completed', done: b.status === 'COMPLETED', active: b.status === 'COMPLETED' }
+    ];
+
+    return `
+      <div class="booking-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div>
+            <span style="font-size:1.1rem; font-weight:700;">${b.deliverable}</span>
+            <span style="font-size:1.1rem; font-weight:800; color:var(--secondary); margin-left:8px;">₹${b.price}</span>
+          </div>
+          <span class="status-pill ${b.status}">${b.status}</span>
+        </div>
+
+        <div style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+          <span>ID: <code style="color:var(--primary); font-family:monospace">${b.id}</code></span>
+          <span>Client: <b>${b.clientId}</b></span>
+          <span>Creator: <b>${b.influencerId}</b></span>
+          <span>Deadline: ${b.deadline || 'N/A'}</span>
+        </div>
+
+        <!-- Escrow Timeline Stepper -->
+        <div class="stepper">
+          ${steps.map((s, idx) => `
+            <div class="step-item ${s.done ? 'completed' : ''} ${s.active ? 'active' : ''}">
+              <div class="step-circle">${s.done ? '✓' : idx + 1}</div>
+              <div>${s.name}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Role Action Buttons -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--surface-border);">
+          ${b.status === 'REQUESTED' && isInfluencer ? `
+            <button class="btn btn-sm btn-secondary" onclick="respondBooking('${b.id}', 'ACCEPT')">Accept Request</button>
+            <button class="btn btn-sm btn-danger" onclick="respondBooking('${b.id}', 'DECLINE')">Decline</button>
+          ` : ''}
+
+          ${b.status === 'ACCEPTED' && isClient ? `
+            <button class="btn btn-sm btn-secondary" onclick="payEscrow('${b.id}')">Pay ₹${b.price} into Escrow</button>
+          ` : ''}
+
+          ${b.status === 'FUNDED' && isInfluencer ? `
+            <button class="btn btn-sm btn-secondary" onclick="deliverWork('${b.id}')">Mark Work Delivered</button>
+          ` : ''}
+
+          ${b.status === 'DELIVERED' && isClient ? `
+            <button class="btn btn-sm btn-secondary" onclick="approveRelease('${b.id}')">Approve & Release Funds</button>
+          ` : ''}
+
+          ${b.status === 'COMPLETED' && isClient && !b.clientReview ? `
+            <button class="btn btn-sm" onclick="leaveReviewPrompt('${b.id}')">★ Leave Review</button>
+          ` : ''}
+
+          <button class="btn btn-sm btn-outline" onclick="openChatModal('${b.id}')">💬 In-App Chat</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Action Helpers
+async function respondBooking(id, action) {
+  try {
+    await api('POST', `/api/bookings/${id}/respond`, { action });
+    loadUserBookings();
+  } catch (e) { alert(e.message); }
+}
+
+async function payEscrow(id) {
+  try {
+    await api('POST', `/api/bookings/${id}/pay`, {});
+    loadUserBookings();
+  } catch (e) { alert(e.message); }
+}
+
+async function deliverWork(id) {
+  try {
+    await api('POST', `/api/bookings/${id}/deliver`, {});
+    loadUserBookings();
+  } catch (e) { alert(e.message); }
+}
+
+async function approveRelease(id) {
+  try {
+    await api('POST', `/api/bookings/${id}/approve`, {});
+    loadUserBookings();
+  } catch (e) { alert(e.message); }
+}
+
+async function leaveReviewPrompt(id) {
+  const rating = prompt('Rate creator (1 to 5 stars):', '5');
+  if (!rating) return;
+  const comment = prompt('Write feedback:', 'Fantastic creator to work with!');
+  try {
+    await api('POST', `/api/bookings/${id}/review`, { rating: Number(rating), comment });
+    alert('Review submitted! Creator rating updated.');
+    loadUserBookings();
+  } catch (e) { alert(e.message); }
+}
+
+// Chat Handlers
+async function openChatModal(bookingId) {
+  currentBookingIdForChat = bookingId;
+  $('chatModal').classList.add('active');
+  await refreshChat();
+}
+
+function closeChatModal() {
+  currentBookingIdForChat = null;
+  $('chatModal').classList.remove('active');
+}
+
+async function refreshChat() {
+  if (!currentBookingIdForChat) return;
+  try {
+    const messages = await api('GET', `/api/bookings/${currentBookingIdForChat}/messages`);
+    $('chatMessages').innerHTML = messages.map(m => `
+      <div class="chat-bubble ${m.senderId === activeUser?.id ? 'mine' : ''}">
+        <div class="chat-sender">${m.senderId}</div>
+        <div>${m.text}</div>
+      </div>
+    `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No messages yet. Send a message below.</div>';
+  } catch (e) { alert(e.message); }
+}
+
+async function sendChatMessage() {
+  const text = $('chatInput').value.trim();
+  if (!text || !currentBookingIdForChat) return;
+  try {
+    await api('POST', `/api/bookings/${currentBookingIdForChat}/messages`, {
+      senderId: activeUser?.id || 'guest',
+      text
+    });
+    $('chatInput').value = '';
+    await refreshChat();
+  } catch (e) { alert(e.message); }
+}
+
+// Init Page State
+updateActiveUserBadge();
+</script>
+</body>
+</html>
