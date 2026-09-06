@@ -8,6 +8,7 @@ import type {
   RateCardItem,
   Review,
   Role,
+  SocialLink,
 } from '@/lib/types'
 
 // Single typed data-access layer over Supabase. Every feature imports from here
@@ -22,11 +23,21 @@ async function requireUid(): Promise<string> {
   return uid
 }
 
+// Every profile column except `email`. profiles.email duplicates auth.users.email
+// and 0005 revokes the column privilege (it was world-readable on influencer rows),
+// so `select('*')` here would fail with "permission denied for column email".
+const PROFILE_COLUMNS =
+  'id,role,name,business_category,bio,location,phone,website,niches,platforms,follower_count,portfolio,avatar_url,featured_until,created_at,updated_at'
+
 export async function getMyProfile(): Promise<Profile | null> {
   const { data: auth } = await supabase.auth.getUser()
   const uid = auth.user?.id
   if (!uid) return null
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', uid)
+    .maybeSingle()
   if (error) throw error
   return data as Profile | null
 }
@@ -34,10 +45,11 @@ export async function getMyProfile(): Promise<Profile | null> {
 export interface ProfileInput {
   role: Role
   name: string
-  email?: string | null
   business_category?: string | null
   bio?: string | null
   location?: string | null
+  phone?: string | null
+  website?: string | null
   niches?: string[]
   platforms?: string[]
   follower_count?: number | null
@@ -48,7 +60,7 @@ export async function createMyProfile(input: ProfileInput): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
     .insert({ id: uid, ...input })
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .single()
   if (error) throw error
   return data as Profile
@@ -60,10 +72,57 @@ export async function updateMyProfile(patch: Partial<ProfileInput>): Promise<Pro
     .from('profiles')
     .update(patch)
     .eq('id', uid)
-    .select('*')
+    .select(PROFILE_COLUMNS)
     .single()
   if (error) throw error
   return data as Profile
+}
+
+// A client's profile, for the creator they are transacting with. Returns null
+// when the row is out of reach: RLS (0005) only exposes a CLIENT row to the
+// counterparty of a booking, so this 404s for everyone else by design.
+export async function getBusinessProfile(id: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', id)
+    .eq('role', 'CLIENT')
+    .maybeSingle()
+  if (error) throw error
+  return data as Profile | null
+}
+
+// ---- Social links ----------------------------------------------------------
+export interface SocialLinkInput {
+  platform: string
+  url: string
+}
+
+export async function listSocialLinks(profileId: string): Promise<SocialLink[]> {
+  const { data, error } = await supabase
+    .from('social_links')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as SocialLink[]
+}
+
+// Replace the signed-in user's whole set of links. Delete-then-insert rather than
+// an upsert plus a diff: a user only ever edits their own handful of rows, and it
+// keeps `unique (profile_id, platform)` out of the picture. If the insert fails
+// after the delete the profile is left with none, which the gate re-prompts for.
+export async function replaceSocialLinks(links: SocialLinkInput[]): Promise<SocialLink[]> {
+  const uid = await requireUid()
+  const { error: delError } = await supabase.from('social_links').delete().eq('profile_id', uid)
+  if (delError) throw delError
+  if (links.length === 0) return []
+  const { data, error } = await supabase
+    .from('social_links')
+    .insert(links.map((l) => ({ profile_id: uid, platform: l.platform, url: l.url })))
+    .select('*')
+  if (error) throw error
+  return (data ?? []) as SocialLink[]
 }
 
 // ---- Rate card -------------------------------------------------------------

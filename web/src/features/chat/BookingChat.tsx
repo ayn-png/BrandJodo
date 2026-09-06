@@ -10,7 +10,18 @@ import { Button, Spinner, Textarea, cn } from '@/components/ui'
 // history, then streams inserts via the Supabase channel returned by
 // subscribeToMessages (which hands back an unsubscribe fn for cleanup).
 // Owned by sub-agent D. Keep the exported name + `{ bookingId: string }` prop.
-export function BookingChat({ bookingId }: { bookingId: string }) {
+//
+// `initialDraft` pre-types the composer when the thread is still empty — the
+// caller uses it so a client's booking request arrives as a real message in
+// their own words instead of an empty thread. It is only ever a draft: nothing
+// is written until they press Send, and they can edit or clear it first.
+export function BookingChat({
+  bookingId,
+  initialDraft,
+}: {
+  bookingId: string
+  initialDraft?: string
+}) {
   const { profile } = useAuth()
   const myId = profile?.id ?? null
   const [messages, setMessages] = useState<Message[]>([])
@@ -19,6 +30,8 @@ export function BookingChat({ bookingId }: { bookingId: string }) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const composerRef = useRef<HTMLTextAreaElement>(null)
+  const seededFor = useRef<string | null>(null)
 
   // Append while de-duping by id (our own insert + the realtime echo can race).
   const upsert = (incoming: Message) =>
@@ -28,6 +41,10 @@ export function BookingChat({ bookingId }: { bookingId: string }) {
     let active = true
     setLoading(true)
     setError(null)
+    // Navigating between two bookings reuses this component, so drop the previous
+    // thread and anything half-typed into it.
+    setMessages([])
+    setText('')
     listMessages(bookingId)
       .then((rows) => {
         if (active) setMessages(rows)
@@ -47,6 +64,17 @@ export function BookingChat({ bookingId }: { bookingId: string }) {
       unsubscribe()
     }
   }, [bookingId])
+
+  // Seed the draft once per booking, and only into an empty thread. The ref is
+  // what keeps a re-render, a realtime insert, or the draft prop disappearing
+  // (the status moved on) from landing on top of what the user is typing.
+  useEffect(() => {
+    if (loading || !initialDraft || seededFor.current === bookingId) return
+    seededFor.current = bookingId
+    if (messages.length > 0) return
+    setText((prev) => prev || initialDraft)
+    composerRef.current?.focus({ preventScroll: true })
+  }, [bookingId, initialDraft, loading, messages.length])
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -123,6 +151,7 @@ export function BookingChat({ bookingId }: { bookingId: string }) {
         {error && <p className="px-1 pb-1 text-xs text-red-600">{error}</p>}
         <div className="flex items-end gap-2">
           <Textarea
+            ref={composerRef}
             rows={1}
             value={text}
             onChange={(e) => setText(e.target.value)}

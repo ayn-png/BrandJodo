@@ -1,9 +1,10 @@
+import { useEffect, useId, useRef } from 'react'
 import type {
   ButtonHTMLAttributes,
+  ComponentPropsWithRef,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
-  TextareaHTMLAttributes,
 } from 'react'
 import type { BookingStatus } from '@/lib/types'
 
@@ -61,7 +62,9 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return <input className={cn(fieldClasses, className)} {...props} />
 }
 
-export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+// ComponentPropsWithRef so callers can hold a ref to the element (React 19 passes
+// `ref` through as an ordinary prop) — the chat composer needs one to focus itself.
+export function Textarea({ className, ...props }: ComponentPropsWithRef<'textarea'>) {
   return <textarea className={cn(fieldClasses, className)} {...props} />
 }
 
@@ -213,5 +216,73 @@ export function Avatar({
     >
       {initial}
     </span>
+  )
+}
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+// Blocking dialog. There is deliberately no close affordance, no Escape handler
+// and no backdrop click: the only use so far is a requirement the user has to
+// satisfy, so whoever renders it decides when it goes away. Focus is moved into
+// the panel on mount and trapped there, and the page behind it cannot scroll.
+export function Modal({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string
+  subtitle?: ReactNode
+  children: ReactNode
+}) {
+  const headingId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const panel = panelRef.current
+    panel?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+
+    const { overflow } = document.body.style
+    document.body.style.overflow = 'hidden'
+
+    // Tab must not reach the page underneath, or the dialog is only visually modal.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !panel) return
+      const stops = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+      if (stops.length === 0) return
+      const first = stops[0]
+      const last = stops[stops.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || !panel.contains(active))) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (active === last || !panel.contains(active))) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => {
+      document.body.style.overflow = overflow
+      document.removeEventListener('keydown', onKeyDown, true)
+    }
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-900/50 p-4 sm:items-center">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-xl"
+      >
+        <h2 id={headingId} className="text-lg font-bold text-gray-900">
+          {title}
+        </h2>
+        {subtitle && <div className="mt-1 text-sm text-gray-500">{subtitle}</div>}
+        <div className="mt-4">{children}</div>
+      </div>
+    </div>
   )
 }

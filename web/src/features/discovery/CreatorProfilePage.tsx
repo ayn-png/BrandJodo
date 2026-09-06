@@ -5,10 +5,12 @@ import {
   getInfluencerCard,
   listRateCard,
   listReviewsForInfluencer,
+  listSocialLinks,
 } from '@/lib/db'
-import type { InfluencerCard, RateCardItem, Review } from '@/lib/types'
+import type { InfluencerCard, RateCardItem, Review, SocialLink } from '@/lib/types'
 import { useAuth } from '@/lib/auth'
 import { formatINR } from '@/lib/money'
+import { safeExternalUrl } from '@/lib/social'
 import { Alert, Avatar, Button, Card, EmptyState, Spinner, Stars } from '@/components/ui'
 
 function formatFollowers(n: number): string {
@@ -33,6 +35,7 @@ export function CreatorProfilePage() {
   const [card, setCard] = useState<InfluencerCard | null>(null)
   const [rateCard, setRateCard] = useState<RateCardItem[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -44,12 +47,18 @@ export function CreatorProfilePage() {
     let active = true
     setLoading(true)
     setLoadError(null)
-    Promise.all([getInfluencerCard(id), listRateCard(id), listReviewsForInfluencer(id)])
-      .then(([c, rc, rv]) => {
+    Promise.all([
+      getInfluencerCard(id),
+      listRateCard(id),
+      listReviewsForInfluencer(id),
+      listSocialLinks(id),
+    ])
+      .then(([c, rc, rv, sl]) => {
         if (!active) return
         setCard(c)
         setRateCard(rc)
         setReviews(rv)
+        setSocialLinks(sl)
       })
       .catch(
         (err) => active && setLoadError(err instanceof Error ? err.message : 'Failed to load creator.'),
@@ -118,6 +127,17 @@ export function CreatorProfilePage() {
     )
   }
 
+  // `platforms` is only a claim; social_links is the proof a business can click
+  // through to. Show the union so a link on a platform they forgot to tick still
+  // appears, and re-check every URL — React drops an href into the DOM verbatim.
+  const linkByPlatform = new Map<string, string | null>(
+    socialLinks.map((l) => [l.platform, safeExternalUrl(l.url)]),
+  )
+  const platformChips = [
+    ...card.platforms,
+    ...socialLinks.map((l) => l.platform).filter((p) => !card.platforms.includes(p)),
+  ]
+
   return (
     <div className="space-y-6">
       <Link to="/" className="inline-block text-sm text-indigo-600 hover:underline">
@@ -151,16 +171,30 @@ export function CreatorProfilePage() {
                 ))}
               </div>
             )}
-            {card.platforms.length > 0 && (
+            {platformChips.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {card.platforms.map((p) => (
-                  <span
-                    key={p}
-                    className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
-                  >
-                    {p}
-                  </span>
-                ))}
+                {platformChips.map((p) => {
+                  const url = linkByPlatform.get(p)
+                  return url ? (
+                    <a
+                      key={p}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-indigo-700 hover:bg-gray-200 hover:underline"
+                    >
+                      {p}
+                      <span aria-hidden="true"> ↗</span>
+                    </a>
+                  ) : (
+                    <span
+                      key={p}
+                      className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                    >
+                      {p}
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>

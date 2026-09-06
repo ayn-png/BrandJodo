@@ -7,6 +7,7 @@ import {
   reviewSchema,
   messageSchema,
   disputeSchema,
+  validateSocialLinkDrafts,
 } from '@/lib/validation'
 import { NICHES, PLATFORMS, BUSINESS_CATEGORIES } from '@/lib/categories'
 
@@ -58,6 +59,37 @@ describe('clientProfileSchema', () => {
     expect(
       clientProfileSchema.safeParse({ name: longString(81), business_category: BUSINESS_CATEGORIES[0] }).success,
     ).toBe(false)
+  })
+
+  const business = { name: 'Cafe Mocha', business_category: BUSINESS_CATEGORIES[0] }
+
+  it('accepts business contact details', () => {
+    expect(
+      clientProfileSchema.safeParse({
+        ...business,
+        bio: 'A neighbourhood cafe in Bandra.',
+        phone: '+91 98765 43210',
+        website: 'sunrisecafe.in',
+      }).success,
+    ).toBe(true)
+  })
+
+  it('accepts blank contact details', () => {
+    expect(clientProfileSchema.safeParse({ ...business, bio: '', phone: '', website: '' }).success).toBe(true)
+  })
+
+  it('accepts a bare 10-digit Indian mobile number', () => {
+    expect(clientProfileSchema.safeParse({ ...business, phone: '9876543210' }).success).toBe(true)
+  })
+
+  it('rejects a phone number that is not a phone number', () => {
+    expect(clientProfileSchema.safeParse({ ...business, phone: 'call me maybe' }).success).toBe(false)
+    expect(clientProfileSchema.safeParse({ ...business, phone: '123' }).success).toBe(false)
+  })
+
+  it('rejects a website that would not be safe in an href', () => {
+    expect(clientProfileSchema.safeParse({ ...business, website: 'javascript:alert(1)' }).success).toBe(false)
+    expect(clientProfileSchema.safeParse({ ...business, website: 'not a url' }).success).toBe(false)
   })
 })
 
@@ -207,6 +239,56 @@ describe('disputeSchema', () => {
 
   it('rejects a reason over the max length', () => {
     expect(disputeSchema.safeParse({ reason: longString(501) }).success).toBe(false)
+  })
+})
+
+describe('validateSocialLinkDrafts', () => {
+  it('normalises a handle into a full URL', () => {
+    const out = validateSocialLinkDrafts([{ platform: 'Instagram', url: '@sunrisecafe' }])
+    expect(out.formError).toBeNull()
+    expect(out.links).toEqual([{ platform: 'Instagram', url: 'https://instagram.com/sunrisecafe' }])
+  })
+
+  it('ignores rows the user never filled in', () => {
+    const out = validateSocialLinkDrafts([
+      { platform: 'Instagram', url: '@sunrisecafe' },
+      { platform: '', url: '' },
+    ])
+    expect(out.formError).toBeNull()
+    expect(out.links).toHaveLength(1)
+  })
+
+  it('requires at least one link', () => {
+    expect(validateSocialLinkDrafts([]).formError).toBe('Add at least one social profile link.')
+    expect(validateSocialLinkDrafts([{ platform: '', url: '' }]).formError).not.toBeNull()
+  })
+
+  it('reports the offending row by index and returns no links', () => {
+    const out = validateSocialLinkDrafts([
+      { platform: 'Instagram', url: '@sunrisecafe' },
+      { platform: 'YouTube', url: 'javascript:alert(1)' },
+    ])
+    expect(out.links).toEqual([])
+    expect(out.errors[1]).toBeTruthy()
+    expect(out.errors[0]).toBeUndefined()
+  })
+
+  it('rejects a platform outside the controlled vocab', () => {
+    const out = validateSocialLinkDrafts([{ platform: 'Myspace', url: '@cafe' }])
+    expect(out.errors[0]).toBe('Pick a platform')
+  })
+
+  it('rejects a row with a platform but no link', () => {
+    expect(validateSocialLinkDrafts([{ platform: 'Instagram', url: '' }]).errors[0]).toBeTruthy()
+  })
+
+  // unique (profile_id, platform) in migration 0007 would reject the insert.
+  it('rejects two links for the same platform', () => {
+    const out = validateSocialLinkDrafts([
+      { platform: 'Instagram', url: '@one' },
+      { platform: 'Instagram', url: '@two' },
+    ])
+    expect(out.errors[1]).toContain('already added')
   })
 })
 

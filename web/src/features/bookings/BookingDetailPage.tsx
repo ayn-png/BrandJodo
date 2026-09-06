@@ -18,6 +18,7 @@ import { formatINR, rupeesToPaise } from '@/lib/money'
 import { bookingRequestSchema, disputeSchema, reviewSchema } from '@/lib/validation'
 import { nextStepHint } from '@/features/notifications/turns'
 import { BookingChat } from '@/features/chat/BookingChat'
+import { bookingRequestDraft } from './requestMessage'
 import {
   Alert,
   Avatar,
@@ -63,6 +64,21 @@ export function BookingDetailPage() {
     let active = true
     setLoading(true)
     setError(null)
+    // Everything below is scoped to one booking. Client-side navigation between
+    // two bookings reuses this component, so clear it or the previous booking's
+    // review and half-typed forms bleed onto the new page.
+    setBooking(null)
+    setReview(null)
+    setShowCounter(false)
+    setCounterPrice('')
+    setCounterNote('')
+    setCounterError(null)
+    setShowDispute(false)
+    setDisputeReason('')
+    setDisputeError(null)
+    setRating(0)
+    setComment('')
+    setReviewError(null)
     getBooking(id)
       .then((b) => {
         if (!active) return
@@ -201,7 +217,19 @@ export function BookingDetailPage() {
           <Avatar name={other?.name ?? 'Unknown'} url={other?.avatar_url ?? undefined} size={44} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-gray-900">{other?.name ?? 'Unknown user'}</span>
+              {/* A creator needs to know who is hiring them; a client already has
+                  the creator's public profile from search, so only this side
+                  links out. RLS shows a client row to their counterparty only. */}
+              {isInfluencer && other ? (
+                <Link
+                  to={`/businesses/${other.id}`}
+                  className="font-semibold text-indigo-600 hover:underline"
+                >
+                  {other.name}
+                </Link>
+              ) : (
+                <span className="font-semibold text-gray-900">{other?.name ?? 'Unknown user'}</span>
+              )}
               <StatusBadge status={status} />
             </div>
             <p className="mt-0.5 text-xs text-gray-500">
@@ -419,7 +447,17 @@ export function BookingDetailPage() {
 
       <div>
         <h2 className="mb-2 text-base font-semibold text-gray-900">Messages</h2>
-        <BookingChat bookingId={id} />
+        {/* Only the client who just asked, and only while the ask is still
+            outstanding: the chat seeds this into the composer if the thread is
+            empty, so the creator sees the request rather than a blank thread. */}
+        <BookingChat
+          bookingId={id}
+          initialDraft={
+            isClient && status === 'REQUESTED'
+              ? bookingRequestDraft(booking, other?.name)
+              : undefined
+          }
+        />
       </div>
     </div>
   )

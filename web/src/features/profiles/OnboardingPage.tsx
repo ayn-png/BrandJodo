@@ -2,13 +2,20 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
-import { createMyProfile } from '@/lib/db'
+import { createMyProfile, replaceSocialLinks } from '@/lib/db'
 import type { ProfileInput } from '@/lib/db'
 import type { Role } from '@/lib/types'
 import { BUSINESS_CATEGORIES, NICHES, PLATFORMS } from '@/lib/categories'
-import { clientProfileSchema, influencerProfileSchema } from '@/lib/validation'
+import { normalizeWebsiteUrl } from '@/lib/social'
+import {
+  clientProfileSchema,
+  influencerProfileSchema,
+  validateSocialLinkDrafts,
+} from '@/lib/validation'
+import type { SocialLinkDraft } from '@/lib/validation'
 import { Alert, Button, Card, Field, Input, PageHeader, Select, Textarea } from '@/components/ui'
 import { MultiSelectChips } from './MultiSelectChips'
+import { SocialLinksFields } from './SocialLinksFields'
 import { collectZodErrors } from './formErrors'
 
 function StepActions({ submitting, onBack }: { submitting: boolean; onBack: () => void }) {
@@ -25,20 +32,24 @@ function StepActions({ submitting, onBack }: { submitting: boolean; onBack: () =
 }
 
 export function OnboardingPage() {
-  const { profile, user, refreshProfile } = useAuth()
+  const { profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
 
   const [role, setRole] = useState<Role | null>(null)
   // Shared
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
+  const [bio, setBio] = useState('')
   // Client
   const [businessCategory, setBusinessCategory] = useState('')
+  const [phone, setPhone] = useState('')
+  const [website, setWebsite] = useState('')
   // Influencer
-  const [bio, setBio] = useState('')
   const [niches, setNiches] = useState<string[]>([])
   const [platforms, setPlatforms] = useState<string[]>([])
   const [followerCount, setFollowerCount] = useState('')
+  const [socialDrafts, setSocialDrafts] = useState<SocialLinkDraft[]>([{ platform: '', url: '' }])
+  const [socialErrors, setSocialErrors] = useState<Record<number, string>>({})
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -47,11 +58,16 @@ export function OnboardingPage() {
   // Already onboarded — send them to the app.
   if (profile) return <Navigate to="/" replace />
 
-  const save = async (input: ProfileInput) => {
+  const save = async (input: ProfileInput, links?: SocialLinkDraft[]) => {
     setSubmitting(true)
     setFormError(null)
     try {
       await createMyProfile(input)
+      // social_links references profiles(id), so the row has to exist first. If
+      // this write fails the account is already usable and the form can't be
+      // resubmitted (the profile now exists), so let them through — the
+      // SocialLinksGate asks again on the next page rather than trapping them.
+      if (links?.length) await replaceSocialLinks(links).catch(() => undefined)
       await refreshProfile()
       navigate('/', { replace: true })
     } catch (err) {
@@ -68,6 +84,9 @@ export function OnboardingPage() {
       name,
       business_category: businessCategory,
       location,
+      bio,
+      phone,
+      website,
     })
     if (!parsed.success) {
       setErrors(collectZodErrors(parsed.error.issues))
@@ -77,9 +96,11 @@ export function OnboardingPage() {
     await save({
       role: 'CLIENT',
       name: parsed.data.name,
-      email: user?.email ?? null,
       business_category: parsed.data.business_category,
       location: parsed.data.location || null,
+      bio: parsed.data.bio || null,
+      phone: parsed.data.phone || null,
+      website: parsed.data.website ? normalizeWebsiteUrl(parsed.data.website) : null,
     })
   }
 
@@ -93,21 +114,25 @@ export function OnboardingPage() {
       platforms,
       follower_count: followerCount === '' ? undefined : followerCount,
     })
-    if (!parsed.success) {
-      setErrors(collectZodErrors(parsed.error.issues))
-      return
-    }
-    setErrors({})
-    await save({
-      role: 'INFLUENCER',
-      name: parsed.data.name,
-      email: user?.email ?? null,
-      bio: parsed.data.bio || null,
-      location: parsed.data.location,
-      niches: parsed.data.niches,
-      platforms: parsed.data.platforms,
-      follower_count: parsed.data.follower_count ?? null,
-    })
+    // Both are validated before either is reported, so one submit surfaces
+    // everything that is wrong.
+    const socials = validateSocialLinkDrafts(socialDrafts)
+    setErrors(parsed.success ? {} : collectZodErrors(parsed.error.issues))
+    setSocialErrors(socials.errors)
+    setFormError(socials.formError)
+    if (!parsed.success || socials.formError) return
+    await save(
+      {
+        role: 'INFLUENCER',
+        name: parsed.data.name,
+        bio: parsed.data.bio || null,
+        location: parsed.data.location,
+        niches: parsed.data.niches,
+        platforms: parsed.data.platforms,
+        follower_count: parsed.data.follower_count ?? null,
+      },
+      socials.links,
+    )
   }
   // Step 1 — pick a role.
   if (!role) {
@@ -185,6 +210,38 @@ export function OnboardingPage() {
                 placeholder="e.g. Bengaluru"
               />
             </Field>
+            <Field
+              label="About"
+              hint="Optional — creators read this before accepting a booking."
+              error={errors.bio}
+            >
+              <Textarea
+                rows={3}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="What your business does, and the kind of content you're after…"
+              />
+            </Field>
+            <Field
+              label="Phone"
+              hint="Optional — only the creator you book can see this."
+              error={errors.phone}
+            >
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. +91 98765 43210"
+              />
+            </Field>
+            <Field label="Website" hint="Optional." error={errors.website}>
+              <Input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="e.g. sunrisecafe.in"
+              />
+            </Field>
             <StepActions submitting={submitting} onBack={() => setRole(null)} />
           </form>
         ) : (
@@ -230,6 +287,12 @@ export function OnboardingPage() {
               onChange={setPlatforms}
               error={errors.platforms}
               hint="Pick at least one."
+            />
+            <SocialLinksFields
+              value={socialDrafts}
+              onChange={setSocialDrafts}
+              errors={socialErrors}
+              disabled={submitting}
             />
             <Field label="Follower count" hint="Optional." error={errors.follower_count}>
               <Input

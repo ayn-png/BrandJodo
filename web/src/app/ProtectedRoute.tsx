@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/lib/auth'
+import { SocialLinksGate } from '@/features/profiles/SocialLinksGate'
 import { Spinner } from '@/components/ui'
 
 // Gate for authenticated routes. Signed-out users go to /login; signed-in users
@@ -21,5 +22,11 @@ export function ProtectedRoute() {
   if (!profile && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }
-  return <Outlet />
+  // The gate renders nothing unless this is a creator with no social links yet.
+  return (
+    <>
+      <Outlet />
+      <SocialLinksGate />
+    </>
+  )
 }

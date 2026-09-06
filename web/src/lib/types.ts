@@ -17,10 +17,13 @@ export interface Profile {
   id: string
   role: Role
   name: string
-  email: string | null
   business_category: string | null
   bio: string | null
   location: string | null
+  // Client-only contact details. `phone` is constrained to CLIENT rows in 0007:
+  // influencer rows are world-readable, client rows only reach a counterparty.
+  phone: string | null
+  website: string | null
   niches: string[]
   platforms: string[]
   follower_count: number | null
@@ -29,6 +32,16 @@ export interface Profile {
   featured_until: string | null
   created_at: string
   updated_at: string
+}
+
+// A creator's link to one of their actual feeds. Public to read (a business
+// checks before booking); writable only by its owner.
+export interface SocialLink {
+  id: string
+  profile_id: string
+  platform: string
+  url: string
+  created_at: string
 }
 
 export interface RateCardItem {

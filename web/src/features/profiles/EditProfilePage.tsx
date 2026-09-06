@@ -1,11 +1,25 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '@/lib/auth'
-import { addRateCardItem, deleteRateCardItem, listRateCard, updateMyProfile } from '@/lib/db'
+import {
+  addRateCardItem,
+  deleteRateCardItem,
+  listRateCard,
+  listSocialLinks,
+  replaceSocialLinks,
+  updateMyProfile,
+} from '@/lib/db'
 import type { ProfileInput } from '@/lib/db'
 import type { RateCardItem } from '@/lib/types'
 import { BUSINESS_CATEGORIES, NICHES, PLATFORMS } from '@/lib/categories'
-import { clientProfileSchema, influencerProfileSchema, rateCardItemSchema } from '@/lib/validation'
+import { normalizeWebsiteUrl } from '@/lib/social'
+import {
+  clientProfileSchema,
+  influencerProfileSchema,
+  rateCardItemSchema,
+  validateSocialLinkDrafts,
+} from '@/lib/validation'
+import type { SocialLinkDraft } from '@/lib/validation'
 import { formatINR, rupeesToPaise } from '@/lib/money'
 import {
   Alert,
@@ -20,6 +34,7 @@ import {
   Textarea,
 } from '@/components/ui'
 import { MultiSelectChips } from './MultiSelectChips'
+import { SocialLinksFields } from './SocialLinksFields'
 import { collectZodErrors } from './formErrors'
 
 export function EditProfilePage() {
@@ -29,11 +44,16 @@ export function EditProfilePage() {
   const [location, setLocation] = useState(profile?.location ?? '')
   const [businessCategory, setBusinessCategory] = useState(profile?.business_category ?? '')
   const [bio, setBio] = useState(profile?.bio ?? '')
+  const [phone, setPhone] = useState(profile?.phone ?? '')
+  const [website, setWebsite] = useState(profile?.website ?? '')
   const [niches, setNiches] = useState<string[]>(profile?.niches ?? [])
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [followerCount, setFollowerCount] = useState(
     profile?.follower_count != null ? String(profile.follower_count) : '',
   )
+  const [socialDrafts, setSocialDrafts] = useState<SocialLinkDraft[]>([{ platform: '', url: '' }])
+  const [socialErrors, setSocialErrors] = useState<Record<number, string>>({})
+  const [socialLoading, setSocialLoading] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -54,10 +74,12 @@ export function EditProfilePage() {
   useEffect(() => {
     if (!isInfluencer || !profileId) {
       setRcLoading(false)
+      setSocialLoading(false)
       return
     }
     let active = true
     setRcLoading(true)
+    setSocialLoading(true)
     listRateCard(profileId)
       .then((items) => {
         if (active) setRateCard(items)
@@ -67,6 +89,19 @@ export function EditProfilePage() {
       })
       .finally(() => {
         if (active) setRcLoading(false)
+      })
+    // The fields stay hidden behind socialLoading until this settles, so the
+    // seed can never land on top of something already typed.
+    listSocialLinks(profileId)
+      .then((links) => {
+        if (!active || links.length === 0) return
+        setSocialDrafts(links.map((l) => ({ platform: l.platform, url: l.url })))
+      })
+      .catch(() => {
+        if (active) setFormError('Could not load your social links.')
+      })
+      .finally(() => {
+        if (active) setSocialLoading(false)
       })
     return () => {
       active = false
@@ -89,12 +124,23 @@ export function EditProfilePage() {
     // fields that role owns so we never clobber the other role's columns.
     const parsed = isInfluencer
       ? influencerProfileSchema.safeParse({ name, location, bio, niches, platforms, follower_count: followerCount })
-      : clientProfileSchema.safeParse({ name, location, business_category: businessCategory })
-    if (!parsed.success) {
-      setErrors(collectZodErrors(parsed.error.issues))
-      return
-    }
-    setErrors({})
+      : clientProfileSchema.safeParse({
+          name,
+          location,
+          business_category: businessCategory,
+          bio,
+          phone,
+          website,
+        })
+    // A creator's links are validated in the same pass, so one submit reports
+    // everything that is wrong. The "at least one" rule lives in the validator.
+    const socials = isInfluencer
+      ? validateSocialLinkDrafts(socialDrafts)
+      : { links: [], errors: {}, formError: null }
+    setErrors(parsed.success ? {} : collectZodErrors(parsed.error.issues))
+    setSocialErrors(socials.errors)
+    setFormError(socials.formError)
+    if (!parsed.success || socials.formError) return
 
     const patch: Partial<ProfileInput> = isInfluencer
       ? {
@@ -109,11 +155,19 @@ export function EditProfilePage() {
           name: name.trim(),
           location: location.trim() || null,
           business_category: businessCategory || null,
+          bio: bio.trim() || null,
+          phone: phone.trim() || null,
+          website: website.trim() ? normalizeWebsiteUrl(website) : null,
         }
 
     setSaving(true)
     try {
       await updateMyProfile(patch)
+      if (isInfluencer) {
+        await replaceSocialLinks(socials.links)
+        // Show the canonical URLs the normaliser produced, not what was typed.
+        setSocialDrafts(socials.links.map((l) => ({ platform: l.platform, url: l.url })))
+      }
       await refreshProfile()
       setSaved(true)
     } catch {
@@ -188,11 +242,21 @@ export function EditProfilePage() {
           <Field label="Location" error={errors.location} hint="City you work in, e.g. Pune">
             <Input value={location} onChange={(e) => setLocation(e.target.value)} />
           </Field>
+          {/* Both roles get a description: creators sell with it, businesses are
+              read with it before a creator accepts a booking. */}
+          <Field
+            label={isInfluencer ? 'Bio' : 'About'}
+            error={errors.bio}
+            hint={
+              isInfluencer
+                ? 'A couple of lines about your content'
+                : 'What your business does, and the kind of content you’re after'
+            }
+          >
+            <Textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
+          </Field>
           {isInfluencer ? (
             <>
-              <Field label="Bio" error={errors.bio} hint="A couple of lines about your content">
-                <Textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
-              </Field>
               <MultiSelectChips
                 label="Niches"
                 options={NICHES}
@@ -209,6 +273,18 @@ export function EditProfilePage() {
                 error={errors.platforms}
                 hint="Where you post"
               />
+              {socialLoading ? (
+                <div className="grid place-items-center py-4">
+                  <Spinner />
+                </div>
+              ) : (
+                <SocialLinksFields
+                  value={socialDrafts}
+                  onChange={setSocialDrafts}
+                  errors={socialErrors}
+                  disabled={saving}
+                />
+              )}
               <Field label="Follower count" error={errors.follower_count}>
                 <Input
                   type="number"
@@ -220,19 +296,41 @@ export function EditProfilePage() {
               </Field>
             </>
           ) : (
-            <Field label="Business category" error={errors.business_category}>
-              <Select
-                value={businessCategory}
-                onChange={(e) => setBusinessCategory(e.target.value)}
+            <>
+              <Field label="Business category" error={errors.business_category}>
+                <Select
+                  value={businessCategory}
+                  onChange={(e) => setBusinessCategory(e.target.value)}
+                >
+                  <option value="">Select a category…</option>
+                  {BUSINESS_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Phone"
+                error={errors.phone}
+                hint="Only the creator you book can see this"
               >
-                <option value="">Select a category…</option>
-                {BUSINESS_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                />
+              </Field>
+              <Field label="Website" error={errors.website} hint="Optional">
+                <Input
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="sunrisecafe.in"
+                />
+              </Field>
+            </>
           )}
           <Button type="submit" loading={saving}>
             Save changes
