@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listMyBookings } from '@/lib/db'
+import { getUnreadNotificationCount } from '@/lib/db'
 import { useAuth } from '@/lib/auth'
-import { isMyTurn } from '@/features/notifications/turns'
 
-// Header bell (zero props) rendered by the app Layout. Counts bookings that need
-// THIS user's action and links to /notifications. Fails silent when signed out /
-// no profile. Owned by sub-agent D — keep the exported name + zero required props.
+// Header bell (zero props) rendered by the app Layout. Counts durable unread
+// notifications (migration 0010) and re-checks every 30s so a new booking,
+// message or payout shows up while the tab stays open. Fails silent when signed
+// out / no profile. Owned by sub-agent D — keep the exported name + zero props.
 export function NotificationsBell() {
   const { profile } = useAuth()
   const [count, setCount] = useState(0)
@@ -17,15 +17,19 @@ export function NotificationsBell() {
       return
     }
     let active = true
-    listMyBookings()
-      .then((bookings) => {
-        if (active) setCount(bookings.filter((b) => isMyTurn(b.status, profile.role)).length)
-      })
-      .catch(() => {
+    const refresh = async () => {
+      try {
+        const n = await getUnreadNotificationCount()
+        if (active) setCount(n)
+      } catch {
         if (active) setCount(0)
-      })
+      }
+    }
+    void refresh()
+    const timer = window.setInterval(() => void refresh(), 30_000)
     return () => {
       active = false
+      window.clearInterval(timer)
     }
   }, [profile])
 
@@ -33,7 +37,7 @@ export function NotificationsBell() {
     <Link
       to="/notifications"
       className="relative rounded-md px-2 py-1.5 text-gray-600 hover:bg-gray-100"
-      aria-label={count > 0 ? `Notifications, ${count} need your attention` : 'Notifications'}
+      aria-label={count > 0 ? `Notifications, ${count} unread` : 'Notifications'}
     >
       <span aria-hidden>🔔</span>
       {count > 0 && (

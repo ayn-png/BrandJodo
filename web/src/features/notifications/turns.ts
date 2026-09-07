@@ -49,6 +49,8 @@ export function nextStepHint(status: BookingStatus, role: Role): string {
       return 'Cancelled.'
     case 'DISPUTED':
       return 'Under dispute — awaiting resolution.'
+    case 'REFUND_OWED':
+      return 'Resolved — refund owed to the client.'
     default:
       return ''
   }

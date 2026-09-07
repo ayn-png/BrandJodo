@@ -3,15 +3,18 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   createBooking,
   getInfluencerCard,
+  listCreatorAvailability,
   listRateCard,
   listReviewsForInfluencer,
   listSocialLinks,
 } from '@/lib/db'
-import type { InfluencerCard, RateCardItem, Review, SocialLink } from '@/lib/types'
+import type { AvailabilityWindow, InfluencerCard, RateCardItem, Review, SocialLink } from '@/lib/types'
 import { useAuth } from '@/lib/auth'
 import { formatINR } from '@/lib/money'
 import { safeExternalUrl } from '@/lib/social'
 import { Alert, Avatar, Button, Card, EmptyState, Spinner, Stars } from '@/components/ui'
+import { FavoriteButton } from '@/features/favorites/FavoriteButton'
+import { ReportButton } from '@/features/reporting/ReportButton'
 
 function formatFollowers(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
@@ -26,6 +29,8 @@ function formatDate(iso: string): string {
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 export function CreatorProfilePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -36,6 +41,7 @@ export function CreatorProfilePage() {
   const [rateCard, setRateCard] = useState<RateCardItem[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
+  const [availability, setAvailability] = useState<AvailabilityWindow[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -52,13 +58,15 @@ export function CreatorProfilePage() {
       listRateCard(id),
       listReviewsForInfluencer(id),
       listSocialLinks(id),
+      listCreatorAvailability(id),
     ])
-      .then(([c, rc, rv, sl]) => {
+      .then(([c, rc, rv, sl, av]) => {
         if (!active) return
         setCard(c)
         setRateCard(rc)
         setReviews(rv)
         setSocialLinks(sl)
+        setAvailability(av)
       })
       .catch(
         (err) => active && setLoadError(err instanceof Error ? err.message : 'Failed to load creator.'),
@@ -201,6 +209,38 @@ export function CreatorProfilePage() {
         </div>
       </Card>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <FavoriteButton creatorId={id ?? ''} />
+        {profile?.id !== id && (
+          <ReportButton targetType="PROFILE" targetId={id ?? ''} label="Report creator" />
+        )}
+      </div>
+
+      {availability.length > 0 && (
+        <Card>
+          <h2 className="text-base font-semibold text-gray-900">Availability</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Usually available on {availability.map((w) => DAY_SHORT[w.day_of_week]).join(', ')}.
+          </p>
+        </Card>
+      )}
+
+      {card.portfolio.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-gray-900">Portfolio</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {card.portfolio.map((url) => (
+              <img
+                key={url}
+                src={url}
+                alt="Portfolio item"
+                className="aspect-square w-full rounded-lg object-cover"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-gray-900">Rate card</h2>
         {isInfluencer && <Alert kind="info">Only clients can book creators.</Alert>}
@@ -213,7 +253,7 @@ export function CreatorProfilePage() {
               <Card key={item.id} className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-medium text-gray-900">{item.deliverable}</p>
-                  <p className="text-lg font-bold text-indigo-600">{formatINR(item.price_paise)}</p>
+                  <p className="text-lg font-bold text-forest">{formatINR(item.price_paise)}</p>
                 </div>
                 <Button
                   onClick={() => requestBooking(item)}

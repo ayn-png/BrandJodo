@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  web:
+    name: Web — lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npx tsc -b
+      - name: Test
+        run: npm test -- --run
+      - name: Build
+        run: npm run build
+
+  # Deploy is opt-in per repo: set these repository vars to enable it.
+  #   VERCEL_WEB_DEPLOY_HOOK  → Vercel project deploy hook URL (no verification needed)
+  #   VERCEL_DEPLOY_WEB       → "true"
+  deploy-web:
+    name: Deploy web → Vercel
+    if: >-
+      github.ref == 'refs/heads/master' &&
+      github.event_name == 'push' &&
+      vars.VERCEL_DEPLOY_WEB == 'true'
+    needs: web
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Vercel deploy hook
+        run: |
+          curl -fsS -X POST "${{ vars.VERCEL_WEB_DEPLOY_HOOK }}" || exit 1

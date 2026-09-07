@@ -4,6 +4,14 @@
 // Applied files are tracked in public.schema_migrations so re-runs are no-ops
 // and only new migrations execute. Each file runs in its own transaction.
 //
+// Modes:
+//   node migrate.mjs          apply pending migrations
+//   node migrate.mjs --seed   additionally load ../seed.sql (idempotent demo data)
+//
+// After applying, it tries to schedule the escrow auto-release job on pg_cron
+// (idempotent). Set SUPABASE_SKIP_CRON=1 to skip; a missing extension is a
+// warning, not a failure.
+//
 // BASELINE (optional): comma-separated filenames to record as already-applied
 // WITHOUT executing them — used once to adopt migrations that predate this
 // tracking table (0001-0003 were applied to the live DB before it existed).
@@ -89,6 +97,50 @@ const run = async () => {
     }
   }
   console.log(`\n${ran} new migration(s) applied.`)
+
+  // Optional seed: run once after migrations exist on the target DB. The file is
+  // written to be idempotent, so re-running is safe.
+  if (process.argv.includes('--seed')) {
+    const seedSql = await readFile(join(here, '..', 'seed.sql'), 'utf8')
+    process.stdout.write('Applying seed.sql ... ')
+    try {
+      await client.query('begin')
+      await client.query(seedSql)
+      await client.query('commit')
+      console.log('ok')
+    } catch (err) {
+      await client.query('rollback')
+      console.log('FAILED')
+      throw err
+    }
+  }
+
+  // Best-effort scheduler wiring: pg_cron on hosted Supabase. Failure here (no
+  // extension grants) must not fail the migration run — the Edge Function
+  // fallback (supabase/functions/auto-release) covers that case.
+  if (!process.env.SUPABASE_SKIP_CRON) {
+    try {
+      await client.query('create extension if not exists pg_cron')
+      await client.query(`
+        do $runner$
+        begin
+          if exists (select 1 from pg_extension where extname = 'pg_cron') then
+            if exists (select 1 from cron.job where jobname = 'release-due-escrow') then
+              perform cron.unschedule('release-due-escrow');
+            end if;
+            perform cron.schedule('release-due-escrow', '*/10 * * * *',
+              $$select public.release_due_escrow()$$);
+          end if;
+        end $runner$;
+      `)
+      console.log('Scheduled release_due_escrow on pg_cron (every 10 minutes).')
+    } catch (err) {
+      console.warn(
+        `\nSkipped pg_cron scheduling: ${err.message}\n` +
+          '  Deploy supabase/functions/auto-release and schedule it instead, or set SUPABASE_SKIP_CRON=1.',
+      )
+    }
+  }
 }
 
 run()

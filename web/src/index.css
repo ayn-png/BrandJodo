@@ -1,18 +1,142 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light;
+/* AInfluencer design system
+   Palette (coolors.co/111318-ae9ebd-33233f-feeafa-21433b):
+   charcoal #111318 · lavender #ae9ebd · plum #33233f · petal #feeafa · forest #21433b
+   Headings: Cormorant Garamond (font-display). Body: Nunito Sans (font-sans).
+   Smooth scroll on by default; prefers-reduced-motion opts out. */
+
+@theme {
+  --font-sans: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Cormorant Garamond", "Times New Roman", Georgia, serif;
+
+  /* Brand palette (coolors.co/111318-ae9ebd-33233f-feeafa-21433b):
+     charcoal #111318 · lavender #ae9ebd · plum #33233f · petal #feeafa · forest #21433b
+     Each hue has a job: plum = primary actions & links, forest = pricing & positive
+     states, charcoal = text & strong frames, lavender = soft fills & borders,
+     petal = background canvas. */
+
+  --color-ink: #111318; /* charcoal — heading & body text */
+  --color-lilac: #ae9ebd; /* lavender — soft fills, borders, placeholders */
+  --color-plum: #33233f; /* plum — primary CTA, active links */
+  --color-forest: #21433b; /* forest teal — pricing, funded/delivered states */
+  --color-petal: #feeafa; /* background canvas */
+  --color-mist: #6a5c79; /* muted mauve — secondary text */
+
+  /* Neutral ramp: charcoal base with plum warmth (whole app re-themes) */
+  --color-gray-50: #fdfcfd;
+  --color-gray-100: #f5f2f7;
+  --color-gray-200: #e9e4ec;
+  --color-gray-300: #d5cedc;
+  --color-gray-400: #ae9ebd;
+  --color-gray-500: #8c7c9c;
+  --color-gray-600: #6a5c79;
+  --color-gray-700: #4c4259;
+  --color-gray-800: #33233f;
+  --color-gray-900: #111318;
+  --color-gray-950: #0a0c0e;
+
+  /* Primary ramp — plum */
+  --color-indigo-50: #f5f1f7;
+  --color-indigo-100: #e7deea;
+  --color-indigo-200: #d2c3d8;
+  --color-indigo-300: #b49fc0;
+  --color-indigo-400: #ae9ebd;
+  --color-indigo-500: #6a5c79;
+  --color-indigo-600: #33233f;
+  --color-indigo-700: #2a1d34;
+  --color-indigo-800: #201629;
+  --color-indigo-900: #171020;
+  --color-indigo-950: #0c0811;
+
+  /* Accent ramp — forest teal */
+  --color-forest-50: #edf3f0;
+  --color-forest-100: #d9e4df;
+  --color-forest-200: #b3cbc2;
+  --color-forest-300: #8dab9f;
+  --color-forest-400: #5a7a70;
+  --color-forest-500: #3a5c52;
+  --color-forest-600: #21433b;
+  --color-forest-700: #1a3630;
+  --color-forest-800: #142a25;
+  --color-forest-900: #0d1d19;
+  --color-forest-950: #081210;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-gray-900);
+    background-color: var(--color-petal);
+    background-image:
+      radial-gradient(
+        1100px 520px at 88% -8%,
+        color-mix(in srgb, var(--color-lilac) 34%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        900px 480px at -10% 108%,
+        color-mix(in srgb, var(--color-plum) 18%, transparent),
+        transparent 60%
+      );
+    overscroll-behavior-y: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: var(--color-lilac);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f9fafb; /* gray-50 */
-  color: #111827; /* gray-900 */
+/* Printing: only the .invoice-print block (invoice modal) goes to paper. */
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .invoice-print,
+  .invoice-print * {
+    visibility: visible;
+  }
+  .invoice-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 24px;
+  }
 }

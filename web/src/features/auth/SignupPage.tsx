@@ -49,7 +49,7 @@ export function SignupPage() {
   return (
     <div className="mx-auto max-w-md">
       <Card>
-        <h1 className="text-xl font-bold text-gray-900">Create your account</h1>
+        <h1 className="font-display text-3xl font-semibold text-ink">Create your account</h1>
         <p className="mt-1 text-sm text-gray-500">
           Book local creators or start earning — set up in minutes.
         </p>

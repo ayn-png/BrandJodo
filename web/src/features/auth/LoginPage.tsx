@@ -41,7 +41,7 @@ export function LoginPage() {
   return (
     <div className="mx-auto max-w-md">
       <Card>
-        <h1 className="text-xl font-bold text-gray-900">Log in</h1>
+        <h1 className="font-display text-3xl font-semibold text-ink">Log in</h1>
         <p className="mt-1 text-sm text-gray-500">Welcome back to AInfluencer.</p>
         <form className="mt-5 space-y-4" onSubmit={onSubmit} noValidate>
           {formError && <Alert kind="error">{formError}</Alert>}

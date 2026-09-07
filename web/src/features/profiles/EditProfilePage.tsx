@@ -6,8 +6,11 @@ import {
   deleteRateCardItem,
   listRateCard,
   listSocialLinks,
+  removePortfolioImage,
   replaceSocialLinks,
   updateMyProfile,
+  uploadAvatar,
+  uploadPortfolioImage,
 } from '@/lib/db'
 import type { ProfileInput } from '@/lib/db'
 import type { RateCardItem } from '@/lib/types'
@@ -36,6 +39,7 @@ import {
 import { MultiSelectChips } from './MultiSelectChips'
 import { SocialLinksFields } from './SocialLinksFields'
 import { collectZodErrors } from './formErrors'
+import { ImagePicker } from '@/components/ImagePicker'
 
 export function EditProfilePage() {
   const { profile, refreshProfile } = useAuth()
@@ -67,8 +71,12 @@ export function EditProfilePage() {
   const [rcError, setRcError] = useState<string | null>(null)
   const [rcAdding, setRcAdding] = useState(false)
   const [rcBusyId, setRcBusyId] = useState<string | null>(null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [portfolioUploading, setPortfolioUploading] = useState(false)
+  const [portfolioRemoving, setPortfolioRemoving] = useState<string | null>(null)
 
   const isInfluencer = profile?.role === 'INFLUENCER'
+  const portfolio = profile?.portfolio ?? []
   const profileId = profile?.id
 
   useEffect(() => {
@@ -115,6 +123,57 @@ export function EditProfilePage() {
       </div>
     )
   }
+  const onAvatarUpload = async (file: File) => {
+    setAvatarBusy(true)
+    try {
+      const url = await uploadAvatar(file, profile?.avatar_url)
+      await updateMyProfile({ avatar_url: url })
+      await refreshProfile()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Could not upload photo.')
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  const onRemoveAvatar = async () => {
+    setAvatarBusy(true)
+    try {
+      await updateMyProfile({ avatar_url: null })
+      await refreshProfile()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Could not remove photo.')
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  const onPortfolioAdd = async (file: File) => {
+    setPortfolioUploading(true)
+    try {
+      const url = await uploadPortfolioImage(file)
+      await updateMyProfile({ portfolio: [...(profile?.portfolio ?? []), url] })
+      await refreshProfile()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Could not upload image.')
+    } finally {
+      setPortfolioUploading(false)
+    }
+  }
+
+  const onPortfolioRemove = async (url: string) => {
+    setPortfolioRemoving(url)
+    try {
+      await removePortfolioImage(url)
+      await updateMyProfile({ portfolio: (profile?.portfolio ?? []).filter((u) => u !== url) })
+      await refreshProfile()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Could not remove image.')
+    } finally {
+      setPortfolioRemoving(null)
+    }
+  }
+
   const onSave = async (e: FormEvent) => {
     e.preventDefault()
     setFormError(null)
@@ -337,6 +396,50 @@ export function EditProfilePage() {
           </Button>
         </form>
       </Card>
+
+      <Card>
+        <h2 className="text-base font-semibold text-gray-900">Profile photo</h2>
+        <p className="mt-1 text-sm text-gray-500">A square JPG or PNG, up to 5 MB.</p>
+        <div className="mt-3">
+          <ImagePicker label="Photo" url={profile?.avatar_url} onUpload={onAvatarUpload} onRemove={onRemoveAvatar} uploading={avatarBusy} />
+        </div>
+      </Card>
+
+      {isInfluencer && (
+        <Card>
+          <h2 className="text-base font-semibold text-gray-900">Portfolio</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Examples of your work. These are publicly visible on your profile.
+          </p>
+          {portfolio.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {portfolio.map((url) => (
+                <div key={url} className="relative">
+                  <img
+                    src={url}
+                    alt="Portfolio item"
+                    className="aspect-square w-full rounded-lg object-cover"
+                  />
+                  <Button
+                    variant="ghost"
+                    className="absolute right-1 top-1 rounded-full bg-white/80 px-2 py-1 text-xs text-red-600 hover:bg-white"
+                    onClick={() => onPortfolioRemove(url)}
+                    loading={portfolioRemoving === url}
+                    disabled={portfolioUploading}
+                    aria-label="Remove this image"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3">
+            <ImagePicker label="Add a work sample" url={null} onUpload={onPortfolioAdd} uploading={portfolioUploading} />
+          </div>
+        </Card>
+      )}
+
       {isInfluencer && (
         <Card>
           <h2 className="text-base font-semibold text-gray-900">Rate card</h2>

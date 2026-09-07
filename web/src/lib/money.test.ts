@@ -1,4 +1,11 @@
-import { paiseToRupees, rupeesToPaise, formatINR } from '@/lib/money'
+import {
+  formatINR,
+  formatLedgerDate,
+  invoiceTotals,
+  paiseToRupees,
+  platformFee,
+  rupeesToPaise,
+} from '@/lib/money'
 
 describe('paiseToRupees', () => {
   it('converts integer paise to rupees', () => {
@@ -57,5 +64,42 @@ describe('formatINR', () => {
   it('formats zero without decimals', () => {
     expect(formatINR(0)).toContain('0')
     expect(formatINR(0)).not.toContain('.')
+  })
+})
+
+describe('platformFee', () => {
+  it('charges the default 5% (500 bps)', () => {
+    expect(platformFee(10000)).toBe(500)
+    expect(platformFee(25000)).toBe(1250)
+    expect(platformFee(0)).toBe(0)
+  })
+
+  it('rounds to the nearest paise like the SQL platform_fee()', () => {
+    expect(platformFee(101, 500)).toBe(5) // 5.05 → 5
+    expect(platformFee(333, 500)).toBe(17) // 16.65 → 17
+    expect(platformFee(1, 500)).toBe(0) // 0.05 → 0
+  })
+
+  it('respects custom fee bps (e.g. 7%)', () => {
+    expect(platformFee(10000, 700)).toBe(700)
+  })
+})
+
+describe('invoiceTotals', () => {
+  it('builds price + fee = total', () => {
+    expect(invoiceTotals(25000)).toEqual({ pricePaise: 25000, feePaise: 1250, totalPaise: 26250 })
+    expect(invoiceTotals(0)).toEqual({ pricePaise: 0, feePaise: 0, totalPaise: 0 })
+  })
+
+  it('reconstructs the exact booking price from release + fee', () => {
+    const { feePaise, pricePaise } = invoiceTotals(45000)
+    expect(pricePaise - feePaise + feePaise).toBe(pricePaise)
+  })
+})
+
+describe('formatLedgerDate', () => {
+  it('formats dates and handles null', () => {
+    expect(formatLedgerDate('2026-08-12T10:00:00Z')).toMatch(/12 Aug 2026/)
+    expect(formatLedgerDate(null)).toBe('—')
   })
 })

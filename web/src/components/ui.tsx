@@ -40,12 +40,12 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500'
+    'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500'
   const variants: Record<string, string> = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-700',
-    secondary: 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50',
+    primary: 'bg-plum text-white shadow-sm hover:bg-indigo-700',
+    secondary: 'bg-white text-gray-800 border border-lilac/70 hover:bg-lilac/30',
     danger: 'bg-red-600 text-white hover:bg-red-700',
-    ghost: 'text-gray-700 hover:bg-gray-100',
+    ghost: 'text-mist hover:bg-lilac/40 hover:text-plum',
   }
   return (
     <button className={cn(base, variants[variant], className)} disabled={disabled || loading} {...rest}>
@@ -56,7 +56,7 @@ export function Button({
 }
 
 const fieldClasses =
-  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'
+  'w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200'
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(fieldClasses, className)} {...props} />
@@ -94,7 +94,7 @@ export function Field({
 }
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn('rounded-xl border border-gray-200 bg-white p-5 shadow-sm', className)}>
+    <div className={cn('rounded-2xl border border-lilac/60 bg-white p-5 shadow-sm', className)}>
       {children}
     </div>
   )
@@ -121,7 +121,7 @@ export function Alert({
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center">
+    <div className="rounded-2xl border border-dashed border-lilac/70 p-10 text-center">
       <p className="font-medium text-gray-700">{title}</p>
       {children && <div className="mt-1 text-sm text-gray-500">{children}</div>}
     </div>
@@ -140,7 +140,7 @@ export function PageHeader({
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        <h1 className="text-3xl font-semibold text-ink">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
       </div>
       {action}
@@ -150,14 +150,15 @@ export function PageHeader({
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   REQUESTED: 'bg-amber-100 text-amber-800',
-  COUNTERED: 'bg-purple-100 text-purple-800',
-  ACCEPTED: 'bg-blue-100 text-blue-800',
+  COUNTERED: 'bg-lilac/70 text-plum',
+  ACCEPTED: 'bg-indigo-100 text-indigo-800',
   DECLINED: 'bg-gray-200 text-gray-700',
-  FUNDED: 'bg-indigo-100 text-indigo-800',
-  DELIVERED: 'bg-cyan-100 text-cyan-800',
+  FUNDED: 'bg-forest text-white',
+  DELIVERED: 'bg-forest-100 text-forest-800',
   COMPLETED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-gray-200 text-gray-700',
   DISPUTED: 'bg-red-100 text-red-800',
+  REFUND_OWED: 'bg-orange-100 text-orange-800',
 }
 
 export function StatusBadge({ status }: { status: BookingStatus }) {
@@ -211,7 +212,7 @@ export function Avatar({
   }
   return (
     <span
-      className="inline-grid place-items-center rounded-full bg-indigo-600 font-bold text-white"
+      className="inline-grid place-items-center rounded-full bg-lilac font-display font-semibold text-ink"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
     >
       {initial}
@@ -269,15 +270,15 @@ export function Modal({
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-gray-900/50 p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:items-center">
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
-        className="w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-xl"
+        className="w-full max-w-lg rounded-2xl border border-lilac/60 bg-white p-5 shadow-xl"
       >
-        <h2 id={headingId} className="text-lg font-bold text-gray-900">
+        <h2 id={headingId} className="font-display text-xl font-semibold text-ink">
           {title}
         </h2>
         {subtitle && <div className="mt-1 text-sm text-gray-500">{subtitle}</div>}

@@ -1,32 +1,46 @@
-# React + TypeScript + Vite
+# web — AInfluencer SPA
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite + TypeScript + Tailwind CSS 4 SPA talking to a Supabase backend.
 
-Currently, two official plugins are available:
+See the [root README](../README.md) for full setup, deployment, and migration docs.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Commands
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm run dev       # local dev server
+npm run lint      # oxlint
+npx tsc -b        # typecheck (no emit)
+npm test          # vitest unit tests
+npm run build     # tsc -b && vite build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Environment
+
+`web/.env` (copy `.env.example`):
+
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — project anon key
+- `VITE_SENTRY_DSN` — *optional*; enables runtime error reporting via Sentry
+
+No service-role key ever lives in this bundle. Privileged actions are authorized
+by SECURITY DEFINER RPCs in `supabase/migrations`. A Content-Security-Policy
+header is injected into the production build (see `vite.config.ts`).
+
+## Structure
+
+```
+src/
+  app/        Layout, router, guards, ErrorBoundary
+  components/ shared UI kit (ui.tsx) + ImagePicker
+  features/   one folder per domain (auth, discovery, bookings, chat, notifications,
+              profiles, admin, money, legal, analytics, favorites, reporting)
+  lib/        db.ts (single typed data layer), types.ts, auth.tsx, money.ts,
+              validation.ts, categories.ts, social.ts, seo.ts
+```
+
+Rules:
+
+- Import UI from `@/components/ui`, data from `@/lib/db`, types from `@/lib/types`.
+- Money crosses the UI boundary as integer paise; format with `formatINR`.
+- Feature pages expose `routes.tsx` exporting `xxxRoutes: RouteObject[]`; wire them
+  in `app/router.tsx`.

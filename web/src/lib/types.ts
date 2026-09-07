@@ -12,6 +12,7 @@ export type BookingStatus =
   | 'COMPLETED'
   | 'CANCELLED'
   | 'DISPUTED'
+  | 'REFUND_OWED'
 
 export interface Profile {
   id: string
@@ -115,4 +116,159 @@ export interface Review {
   rating: number
   comment: string | null
   created_at: string
+}
+
+// ---- Money ledger (migration 0009) -----------------------------------------
+
+export type PaymentKind = 'ESCROW_DEPOSIT' | 'ESCROW_RELEASE' | 'PLATFORM_FEE' | 'REFUND'
+
+export interface Payment {
+  id: string
+  booking_id: string
+  kind: PaymentKind
+  amount_paise: number
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED'
+  provider: 'SIMULATED' | 'RAZORPAY'
+  provider_ref: string | null
+  created_at: string
+  settled_at: string | null
+  // Joins from list_my_payments / list_all_payments.
+  deliverable: string
+  book_status: BookingStatus
+}
+
+export type PayoutStatus = 'REQUESTED' | 'PROCESSING' | 'PAID' | 'FAILED'
+
+export interface Payout {
+  id: string
+  amount_paise: number
+  status: PayoutStatus
+  method: string
+  note: string | null
+  requested_at: string
+  paid_at: string | null
+}
+
+export interface PayoutAccount {
+  id: string
+  influencer_id: string
+  upi_id: string
+  account_holder: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Balance {
+  available_paise: number
+  escrow_held_paise: number
+  total_paid_out_paise: number
+}
+
+export interface Invoice {
+  id: string
+  booking_id: string
+  invoice_no: string
+  client_id: string
+  influencer_id: string
+  business_name: string
+  influencer_name: string
+  deliverable: string
+  price_paise: number
+  platform_fee_paise: number
+  total_paise: number
+  gstin: string | null
+  issued_at: string
+}
+
+// Row shape of the admin list_all_payments() RPC (names are joined in SQL).
+export interface AdminPaymentRow {
+  id: string
+  booking_id: string
+  kind: PaymentKind
+  amount_paise: number
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED'
+  provider: 'SIMULATED' | 'RAZORPAY'
+  provider_ref: string | null
+  created_at: string
+  settled_at: string | null
+  deliverable: string
+  client_name: string
+  influencer_name: string
+}
+
+// ---- Durable notifications (migration 0010) ---------------------------------
+// Rows are produced by SECURITY DEFINER DB triggers (booking/message/review/
+// payout events), never by the client. `data` carries event-specific ids.
+
+export type NotificationType = 'booking' | 'message' | 'review' | 'payout' | 'admin'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  body: string | null
+  booking_id: string | null
+  data: Record<string, unknown>
+  read_at: string | null
+  created_at: string
+}
+
+// ---- Moderation / reporting (migration 0010) --------------------------------
+
+export type ReportTargetType = 'PROFILE' | 'BOOKING' | 'MESSAGE' | 'REVIEW'
+export type ReportStatus = 'OPEN' | 'REVIEWED' | 'DISMISSED'
+
+export interface Report {
+  id: string
+  reporter_id: string
+  target_type: ReportTargetType
+  target_id: string
+  reason: string
+  status: ReportStatus
+  admin_note: string | null
+  created_at: string
+  resolved_at: string | null
+}
+
+// Admin moderation queue row (list_open_reports() joins the reporter name).
+export interface OpenReportRow {
+  id: string
+  reporter_id: string
+  reporter_name: string
+  target_type: ReportTargetType
+  target_id: string
+  reason: string
+  status: ReportStatus
+  created_at: string
+}
+
+// ---- Favorites + availability (migration 0011) ------------------------------
+
+export interface FavoriteCard {
+  id: string
+  name: string
+  avatar_url: string | null
+  location: string | null
+  niches: string[]
+  avg_rating: number
+  review_count: number
+  min_price_paise: number | null
+}
+
+export interface AvailabilityWindow {
+  day_of_week: number // 0 = Sunday … 6 = Saturday
+  start_time: string
+  end_time: string
+  note: string | null
+}
+
+export interface CreatorAnalytics {
+  total_bookings: number
+  completed_bookings: number
+  completion_rate: number
+  active_bookings: number
+  avg_rating: number
+  review_count: number
+  total_earned_paise: number
+  available_balance_paise: number
 }

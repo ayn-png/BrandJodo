@@ -52,7 +52,7 @@ export function CreatorCard({ card }: { card: InfluencerCard }) {
           {card.min_price_paise != null ? (
             <p className="text-sm text-gray-500">
               from{' '}
-              <span className="text-lg font-bold text-indigo-600">
+              <span className="text-lg font-bold text-forest">
                 {formatINR(card.min_price_paise)}
               </span>
             </p>

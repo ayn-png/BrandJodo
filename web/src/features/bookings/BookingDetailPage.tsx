@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   acceptCounter,
   approveBooking,
   cancelBooking,
   createReview,
   deliverBooking,
+  extendAutoRelease,
   getBooking,
   getReviewForBooking,
   openDispute,
   payBooking,
+  rebookBooking,
   respondToBooking,
 } from '@/lib/db'
 import type { Booking, BookingWithParties, Review } from '@/lib/types'
@@ -18,6 +20,9 @@ import { formatINR, rupeesToPaise } from '@/lib/money'
 import { bookingRequestSchema, disputeSchema, reviewSchema } from '@/lib/validation'
 import { nextStepHint } from '@/features/notifications/turns'
 import { BookingChat } from '@/features/chat/BookingChat'
+import { InvoiceCard } from '@/features/money/InvoiceCard'
+import { PaymentHistoryCard } from '@/features/money/PaymentHistoryCard'
+import { ReportButton } from '@/features/reporting/ReportButton'
 import { bookingRequestDraft } from './requestMessage'
 import {
   Alert,
@@ -39,6 +44,7 @@ import { errMsg, formatDate } from './helpers'
 // the database decides what's allowed.
 export function BookingDetailPage() {
   const { id = '' } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { profile } = useAuth()
 
   const [booking, setBooking] = useState<BookingWithParties | null>(null)
@@ -55,6 +61,7 @@ export function BookingDetailPage() {
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
   const [disputeError, setDisputeError] = useState<string | null>(null)
+  const [showInvoice, setShowInvoice] = useState(false)
 
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -76,6 +83,7 @@ export function BookingDetailPage() {
     setShowDispute(false)
     setDisputeReason('')
     setDisputeError(null)
+    setShowInvoice(false)
     setRating(0)
     setComment('')
     setReviewError(null)
@@ -171,6 +179,19 @@ export function BookingDetailPage() {
       setBusy(null)
     }
   }
+  const onRebook = async () => {
+    setBusy('rebook')
+    setError(null)
+    try {
+      const nb = await rebookBooking(id)
+      navigate(`/bookings/${nb.id}`)
+    } catch (e) {
+      setError(errMsg(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="grid place-items-center py-20">
@@ -346,9 +367,41 @@ export function BookingDetailPage() {
             </Button>
           )}
 
+          {status === 'DELIVERED' && booking.auto_release_at && !booking.escrow_released && (
+            <Button
+              variant="secondary"
+              onClick={() => run('extend', () => extendAutoRelease(id))}
+              loading={busy === 'extend'}
+              disabled={busy !== null}
+              title="Push the review countdown back by 3 days"
+            >
+              Extend auto-release (+3 days)
+            </Button>
+          )}
+
           {canDispute && (
             <Button variant="ghost" onClick={() => setShowDispute((v) => !v)} disabled={busy !== null}>
               {showDispute ? 'Never mind' : 'Open a dispute'}
+            </Button>
+          )}
+
+          {isClient && status === 'COMPLETED' && (
+            <Button
+              variant="secondary"
+              onClick={() => setShowInvoice((v) => !v)}
+              disabled={busy !== null}
+            >
+              {showInvoice ? 'Close invoice' : 'View invoice'}
+            </Button>
+          )}
+
+          {isClient && status === 'COMPLETED' && (
+            <Button
+              onClick={() => void onRebook()}
+              loading={busy === 'rebook'}
+              disabled={busy !== null && busy !== 'rebook'}
+            >
+              Book again
             </Button>
           )}
         </div>
@@ -399,6 +452,16 @@ export function BookingDetailPage() {
           </div>
         )}
       </Card>
+
+      <div className="flex justify-end">
+        <ReportButton targetType="BOOKING" targetId={id} label="Report a problem" />
+      </div>
+
+      {(booking.escrow_funded || booking.status === 'COMPLETED') && (
+        <PaymentHistoryCard bookingId={id} />
+      )}
+      {showInvoice && <InvoiceCard bookingId={id} onClose={() => setShowInvoice(false)} />}
+
       {review && (
         <Card>
           <h2 className="text-base font-semibold text-gray-900">Review</h2>
