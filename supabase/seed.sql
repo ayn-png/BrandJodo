@@ -1,4 +1,4 @@
--- supabase/seed.sql — idempotent demo data for AInfluencer.
+-- supabase/seed.sql — idempotent demo data for BrandJodo.
 --
 -- Run AFTER migrations:  node supabase/scripts/migrate.mjs --seed
 -- Safe to re-run (every statement is `on conflict do nothing`).
@@ -6,7 +6,7 @@
 -- Demo accounts — password for ALL accounts: demo-pass-123!
 --   client1@demo.in, client2@demo.in        (businesses)
 --   creator1@demo.in … creator6@demo.in     (creators)
---   admin@ainfluencer.in                     (admin / dispute resolver)
+--   admin@brandjodo.in                     (admin / dispute resolver)
 
 -- ---------------------------------------------------------------------------
 -- 1. Auth users + identities (so the accounts can actually sign in)
@@ -18,7 +18,7 @@ insert into auth.users (
   created_at, updated_at, confirmation_token, recovery_token,
   email_change_token_new, email_change
 ) values
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-00000000000a', 'authenticated', 'authenticated', 'admin@ainfluencer.in',    extensions.crypt('demo-pass-123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-4000-8000-00000000000a', 'authenticated', 'authenticated', 'admin@brandjodo.in',    extensions.crypt('demo-pass-123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'c0000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'client1@demo.in',        extensions.crypt('demo-pass-123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'c0000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'client2@demo.in',        extensions.crypt('demo-pass-123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'f0000000-0000-4000-8000-000000000101', 'authenticated', 'authenticated', 'creator1@demo.in',       extensions.crypt('demo-pass-123!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
@@ -32,7 +32,7 @@ on conflict (id) do nothing;
 insert into auth.identities (
   provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at, id
 ) values
-  ('a0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-00000000000a', jsonb_build_object('sub','a0000000-0000-4000-8000-00000000000a','email','admin@ainfluencer.in'),    'email', now(), now(), now(), 'a0000000-0000-4000-8000-00000000000a'),
+  ('a0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-00000000000a', jsonb_build_object('sub','a0000000-0000-4000-8000-00000000000a','email','admin@brandjodo.in'),    'email', now(), now(), now(), 'a0000000-0000-4000-8000-00000000000a'),
   ('c0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', jsonb_build_object('sub','c0000000-0000-4000-8000-000000000001','email','client1@demo.in'),        'email', now(), now(), now(), 'c0000000-0000-4000-8000-000000000001'),
   ('c0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000002', jsonb_build_object('sub','c0000000-0000-4000-8000-000000000002','email','client2@demo.in'),        'email', now(), now(), now(), 'c0000000-0000-4000-8000-000000000002'),
   ('f0000000-0000-4000-8000-000000000101', 'f0000000-0000-4000-8000-000000000101', jsonb_build_object('sub','f0000000-0000-4000-8000-000000000101','email','creator1@demo.in'),       'email', now(), now(), now(), 'f0000000-0000-4000-8000-000000000101'),

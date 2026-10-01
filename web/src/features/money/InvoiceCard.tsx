@@ -56,7 +56,7 @@ export function InvoiceCard({ bookingId, onClose }: InvoiceCardProps) {
             <div className="invoice-print">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-display text-xl font-semibold text-ink">AInfluencer</p>
+                  <p className="font-display text-xl font-semibold text-ink">BrandJodo</p>
                   <p className="text-xs text-mist">Creator marketplace · Tax invoice</p>
                 </div>
                 <div className="text-right text-sm">

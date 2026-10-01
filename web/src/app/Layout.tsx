@@ -23,14 +23,14 @@ export function Layout() {
       {/* SPA scroll restore: re-scroll on back/forward instead of jumping to top on every nav. */}
       <ScrollRestoration />
       <header className="sticky top-0 z-10 border-b border-lilac/40 bg-petal/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-3">
           <Link to="/" className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-ink font-display text-lg font-semibold text-white shadow-sm">
               A
             </span>
-            <span className="font-display text-xl font-semibold tracking-tight text-ink">AInfluencer</span>
+            <span className="font-display text-xl font-semibold tracking-tight text-ink">BrandJodo</span>
           </Link>
-          <nav className="ml-auto flex items-center gap-1 text-sm">
+          <nav className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1 text-sm">
             <NavLink to="/" end className={({ isActive }) => navCls(isActive)}>
               Discover
             </NavLink>

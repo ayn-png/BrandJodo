@@ -5,6 +5,8 @@ import com.marketplace.model.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +20,11 @@ public class DataStore {
     private final Map<String, User> users = new ConcurrentHashMap<>();
     private final Map<String, Booking> bookings = new ConcurrentHashMap<>();
     private final AtomicLong idSeq = new AtomicLong(1);
+    private record Session(String userId, long expiresAt) {}
+
+    private static final long SESSION_TTL_MILLIS = 8 * 60 * 60 * 1000L;
+    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
+    private final SecureRandom random = new SecureRandom();
 
     public String nextId(String prefix) {
         return prefix + "_" + idSeq.getAndIncrement();
@@ -32,6 +39,37 @@ public class DataStore {
 
     public User getUser(String id) {
         return users.get(id);
+    }
+
+    public User findUserByEmail(String email) {
+        return users.values().stream()
+                .filter(u -> u.email.equalsIgnoreCase(email))
+                .findFirst().orElse(null);
+    }
+
+    public String createSession(User user) {
+        long now = System.currentTimeMillis();
+        sessions.entrySet().removeIf(entry -> entry.getValue().expiresAt() <= now);
+        byte[] token = new byte[32];
+        random.nextBytes(token);
+        String value = Base64.getUrlEncoder().withoutPadding().encodeToString(token);
+        sessions.put(value, new Session(user.id, now + SESSION_TTL_MILLIS));
+        return value;
+    }
+
+    public User userForToken(String token) {
+        if (token == null) return null;
+        Session session = sessions.get(token);
+        if (session == null) return null;
+        if (session.expiresAt() <= System.currentTimeMillis()) {
+            sessions.remove(token, session);
+            return null;
+        }
+        return getUser(session.userId());
+    }
+
+    public void revokeSession(String token) {
+        if (token != null) sessions.remove(token);
     }
 
     public List<User> allInfluencers() {

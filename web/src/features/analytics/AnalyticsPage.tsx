@@ -30,7 +30,7 @@ function shortTime(value: string): string {
 // Creator analytics dashboard (Workstream 3): booking/revenue/rating stats from
 // get_my_analytics() plus the recurring weekly availability editor (0011).
 export function AnalyticsPage() {
-  usePageTitle('My analytics — AInfluencer')
+  usePageTitle('My analytics — BrandJodo')
   const { profile } = useAuth()
   const isInfluencer = profile?.role === 'INFLUENCER'
 

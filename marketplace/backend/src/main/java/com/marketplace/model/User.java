@@ -8,6 +8,7 @@ public class User {
     public final String id;
     public String name;
     public String email;
+    public final String passwordHash;
     public Role role;
     public String businessCategory; // clients only, optional
 
@@ -20,11 +21,12 @@ public class User {
     public List<String> portfolio = new ArrayList<>();
     public List<RateCardItem> rateCard = new ArrayList<>();
 
-    public User(String id, String name, String email, Role role) {
+    public User(String id, String name, String email, Role role, String passwordHash) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.role = role;
+        this.passwordHash = passwordHash;
     }
 
     public Map<String, Object> toMap(boolean includeRatingSummary, Double avgRating, Integer reviewCount) {
@@ -50,6 +52,12 @@ public class User {
                 m.put("reviewCount", reviewCount);
             }
         }
+        return m;
+    }
+
+    public Map<String, Object> toPublicMap(boolean includeRatingSummary, Double avgRating, Integer reviewCount) {
+        Map<String, Object> m = toMap(includeRatingSummary, avgRating, reviewCount);
+        m.remove("email");
         return m;
     }
 }

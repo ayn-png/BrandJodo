@@ -462,17 +462,31 @@ end $$;
 -- Admin marks a payout paid/failed; creator balance updates at that moment.
 create or replace function public.mark_payout_status(p_payout_id uuid, p_status text)
 returns public.payouts language plpgsql security definer set search_path = public as $$
-declare payout_row public.payouts;
+declare
+  payout_row public.payouts;
+  allowed boolean;
 begin
   if not public.is_admin() then raise exception 'Admins only'; end if;
   if p_status not in ('PROCESSING','PAID','FAILED') then
     raise exception 'Invalid payout status';
   end if;
+  select * into payout_row
+  from public.payouts
+  where id = p_payout_id
+  for update;
+  if not found then raise exception 'Payout not found'; end if;
+  if payout_row.status = p_status then
+    return payout_row;
+  end if;
+  allowed := (payout_row.status = 'REQUESTED' and p_status in ('PROCESSING','FAILED'))
+    or (payout_row.status = 'PROCESSING' and p_status in ('PAID','FAILED'));
+  if not allowed then
+    raise exception 'Invalid payout transition from % to %', payout_row.status, p_status;
+  end if;
   update public.payouts
     set status = p_status,
-        paid_at = case when p_status = 'PAID' then now() else paid_at end
+        paid_at = case when p_status = 'PAID' then now() else null end
     where id = p_payout_id returning * into payout_row;
-  if not found then raise exception 'Payout not found'; end if;
   return payout_row;
 end $$;
 

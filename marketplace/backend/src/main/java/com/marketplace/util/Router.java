@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.marketplace.model.User;
+import com.marketplace.store.DataStore;
 
 /**
  * Minimal REST router standing in for Spring MVC's @RestController/@GetMapping
@@ -54,9 +56,13 @@ public class Router implements HttpHandler {
         Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
 
         // CORS so the demo frontend (served separately) can call this API.
-        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        String origin = exchange.getRequestHeaders().getFirst("Origin");
+        if ("http://localhost:8080".equals(origin) || "http://127.0.0.1:8080".equals(origin)) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", origin);
+            exchange.getResponseHeaders().set("Vary", "Origin");
+        }
         exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-        exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type, Authorization");
         if ("OPTIONS".equals(method)) {
             exchange.sendResponseHeaders(204, -1);
             return;
@@ -86,6 +92,23 @@ public class Router implements HttpHandler {
             return;
         }
         writeJson(exchange, 404, Map.of("error", "No route for " + method + " " + fullPath));
+    }
+
+    public static User requireAuthenticated(HttpExchange exchange, DataStore store) {
+        String token = bearerToken(exchange);
+        if (token == null) {
+            throw new ApiError(401, "Authentication required");
+        }
+        User user = store.userForToken(token);
+        if (user == null) throw new ApiError(401, "Invalid or expired token");
+        return user;
+    }
+
+    public static String bearerToken(HttpExchange exchange) {
+        String header = exchange.getRequestHeaders().getFirst("Authorization");
+        if (header == null || !header.startsWith("Bearer ") || header.length() <= 7) return null;
+        String token = header.substring(7).trim();
+        return token.isEmpty() ? null : token;
     }
 
     public static class ApiError extends RuntimeException {

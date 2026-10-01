@@ -1,4 +1,4 @@
-# AInfluencer — Local Creator & Brand Marketplace
+# BrandJodo — Local Creator & Brand Marketplace
 
 A two-sided marketplace where local businesses hire content creators (food, fitness,
 fashion, travel, …) through escrowed bookings. React + Vite + Supabase; money is
@@ -49,7 +49,7 @@ Framework decisions up front (keep these):
 
    Seed accounts (all password `demo-pass-123!`):
    `client1@demo.in` · `client2@demo.in` · `creator1@demo.in` … `creator6@demo.in` ·
-   `admin@ainfluencer.in`
+   `admin@brandjodo.in`
 4. `cd web && npm install && npm run dev`
 
 ## Testing & quality
@@ -71,9 +71,10 @@ Supabase has it). Fallback: deploy `supabase/functions/auto-release` and schedul
 
 ## Deploying
 
-- **Web**: Vercel project pointing at `web/`; env vars `VITE_SUPABASE_URL` and
-  `VITE_SUPABASE_ANON_KEY`. Optional CI-driven deploy hook (see
-  `.github/workflows/ci.yml`).
+- **Web**: Vercel project pointing at `web/`; env vars `VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`, and optionally `VITE_SENTRY_DSN`. See
+  [`DEPLOYMENT.md`](./DEPLOYMENT.md) for production setup, health checks,
+  migration, CI/CD, and rollback procedures.
 - **Database**: `node supabase/scripts/migrate.mjs` against the production
   `PG*` env vars, then `--seed` once (or upgrade SQL by writing a new migration).
 

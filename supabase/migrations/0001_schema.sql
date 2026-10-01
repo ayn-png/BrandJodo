@@ -1,4 +1,4 @@
--- 0001_schema.sql — AInfluencer core schema
+-- 0001_schema.sql — BrandJodo core schema
 -- Money is stored as INTEGER paise (₹1 = 100 paise). Never use float for money.
 
 -- profiles: one row per user, keyed to Supabase auth.users

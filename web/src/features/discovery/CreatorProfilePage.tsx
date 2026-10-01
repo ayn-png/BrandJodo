@@ -90,9 +90,7 @@ export function CreatorProfilePage() {
     setPendingItemId(item.id)
     try {
       const booking = await createBooking({
-        influencerId: id,
-        deliverable: item.deliverable,
-        pricePaise: item.price_paise,
+        rateCardItemId: item.id,
       })
       navigate(`/bookings/${booking.id}`)
     } catch (err) {

@@ -1,4 +1,4 @@
-# web — AInfluencer SPA
+# web — BrandJodo SPA
 
 React 19 + Vite + TypeScript + Tailwind CSS 4 SPA talking to a Supabase backend.
 

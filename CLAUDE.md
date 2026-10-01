@@ -1,4 +1,4 @@
-# AInfluencer — CLAUDE.md
+# BrandJodo — CLAUDE.md
 
 ## What we're building
 A lightweight, **price-first marketplace** connecting **local businesses/brands (clients)** with **local content creators (influencers)**. Not an enterprise tool — it's for small, budget-conscious local users who mainly care about finding the right creator at the right price, fast.

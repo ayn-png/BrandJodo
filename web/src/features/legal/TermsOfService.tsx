@@ -1,34 +1,34 @@
 import { Card, PageHeader } from '@/components/ui'
 import { LegalSection } from '@/features/legal/LegalSection'
 
-// Static Terms of Service for AInfluencer (v1). India-first marketplace; prices
+// Static Terms of Service for BrandJodo (v1). India-first marketplace; prices
 // in ₹; payments are a SIMULATED escrow with auto-release 6 days after delivery.
 export function TermsOfService() {
   return (
     <div className="space-y-6">
       <PageHeader
         title="Terms of Service"
-        subtitle="The rules for using AInfluencer. Last updated 5 September 2026."
+        subtitle="The rules for using BrandJodo. Last updated 5 September 2026."
       />
       <Card className="space-y-6">
         <p className="text-sm leading-relaxed text-gray-600">
-          Welcome to AInfluencer, a price-first marketplace that connects local businesses (clients)
+          Welcome to BrandJodo, a price-first marketplace that connects local businesses (clients)
           with local content creators (influencers) in India. By creating an account or using the
-          app, you agree to these terms. If you do not agree, please do not use AInfluencer.
+          app, you agree to these terms. If you do not agree, please do not use BrandJodo.
         </p>
 
-        <LegalSection heading="What AInfluencer is">
+        <LegalSection heading="What BrandJodo is">
           <p>
-            AInfluencer is a platform that helps clients and creators find each other and agree on
+            BrandJodo is a platform that helps clients and creators find each other and agree on
             paid content bookings at transparent, fixed prices in ₹ (INR). The agreement for any
-            piece of work is between the client and the creator. AInfluencer is not a party to that
+            piece of work is between the client and the creator. BrandJodo is not a party to that
             agreement and does not act as an agent, employer, or guarantor of either side.
           </p>
         </LegalSection>
 
         <LegalSection heading="Eligibility and your account">
           <p>
-            You must be at least 18 years old to use AInfluencer. Provide accurate information, keep
+            You must be at least 18 years old to use BrandJodo. Provide accurate information, keep
             your login credentials safe, and take responsibility for activity under your account. You
             may hold a client or a creator profile; enforcement of what each role can do is handled
             on the server, not just in the app.
@@ -74,7 +74,7 @@ export function TermsOfService() {
         <LegalSection heading="Your content and conduct">
           <p>
             You are responsible for the content you add — profile details, portfolio media, messages,
-            and reviews. You must have the right to share what you upload, and you grant AInfluencer
+            and reviews. You must have the right to share what you upload, and you grant BrandJodo
             permission to display it as needed to operate the marketplace. Do not post content that is
             illegal, infringing, misleading, hateful, harassing, or otherwise harmful, and do not
             misrepresent your identity, following, or work.
@@ -110,9 +110,9 @@ export function TermsOfService() {
 
         <LegalSection heading="Disclaimers and liability">
           <p>
-            AInfluencer is provided on an “as is” and “as available” basis. We do not guarantee the
+            BrandJodo is provided on an “as is” and “as available” basis. We do not guarantee the
             quality, timing, legality, or outcome of any engagement between a client and a creator. To
-            the extent permitted by law, AInfluencer is not liable for disputes between users or for
+            the extent permitted by law, BrandJodo is not liable for disputes between users or for
             indirect or consequential losses arising from your use of the service.
           </p>
         </LegalSection>
@@ -128,7 +128,7 @@ export function TermsOfService() {
         <LegalSection heading="Governing law and contact">
           <p>
             These terms are governed by the laws of India. For questions about these terms, email{' '}
-            <span className="font-medium text-gray-700">support@ainfluencer.app</span>.
+            <span className="font-medium text-gray-700">support@brandjodo.app</span>.
           </p>
         </LegalSection>
       </Card>

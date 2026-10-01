@@ -139,8 +139,8 @@ export function OnboardingPage() {
     return (
       <div className="mx-auto max-w-lg">
         <PageHeader
-          title="Welcome to AInfluencer"
-          subtitle="First, tell us how you'll use AInfluencer."
+          title="Welcome to BrandJodo"
+          subtitle="First, tell us how you'll use BrandJodo."
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <button

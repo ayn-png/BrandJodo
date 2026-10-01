@@ -9,7 +9,7 @@ import { CreatorCard } from '@/features/discovery/CreatorCard'
 // "/saved" — a client's shortlist of creators (migration 0011). One card per
 // creator with an in-place remove so the list behaves like a queue.
 export function FavoritesPage() {
-  usePageTitle('Saved creators — AInfluencer')
+  usePageTitle('Saved creators — BrandJodo')
   const { profile } = useAuth()
   const [cards, setCards] = useState<FavoriteCard[] | null>(null)
   const [error, setError] = useState<string | null>(null)

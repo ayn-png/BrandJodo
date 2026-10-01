@@ -83,7 +83,9 @@ export async function createMyProfile(input: ProfileInput): Promise<Profile> {
   return data as Profile
 }
 
-export async function updateMyProfile(patch: Partial<ProfileInput>): Promise<Profile> {
+export async function updateMyProfile(
+  patch: Partial<Omit<ProfileInput, 'role'>>,
+): Promise<Profile> {
   const uid = await requireUid()
   const { data, error } = await supabase
     .from('profiles')
@@ -130,14 +132,10 @@ export async function listSocialLinks(profileId: string): Promise<SocialLink[]> 
 // keeps `unique (profile_id, platform)` out of the picture. If the insert fails
 // after the delete the profile is left with none, which the gate re-prompts for.
 export async function replaceSocialLinks(links: SocialLinkInput[]): Promise<SocialLink[]> {
-  const uid = await requireUid()
-  const { error: delError } = await supabase.from('social_links').delete().eq('profile_id', uid)
-  if (delError) throw delError
-  if (links.length === 0) return []
-  const { data, error } = await supabase
-    .from('social_links')
-    .insert(links.map((l) => ({ profile_id: uid, platform: l.platform, url: l.url })))
-    .select('*')
+  await requireUid()
+  const { data, error } = await supabase.rpc('replace_social_links', {
+    p_links: links,
+  })
   if (error) throw error
   return (data ?? []) as SocialLink[]
 }
@@ -258,27 +256,17 @@ const BOOKING_WITH_PARTIES =
   '*, client:profiles!bookings_client_id_fkey(id,name,avatar_url), influencer:profiles!bookings_influencer_id_fkey(id,name,avatar_url)'
 
 export interface BookingInput {
-  influencerId: string
-  deliverable: string
-  pricePaise: number
+  rateCardItemId: string
   deadline?: string | null
   usageRights?: string | null
 }
 
 export async function createBooking(input: BookingInput): Promise<Booking> {
-  const uid = await requireUid()
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert({
-      client_id: uid,
-      influencer_id: input.influencerId,
-      deliverable: input.deliverable,
-      price_paise: input.pricePaise,
-      deadline: input.deadline || null,
-      usage_rights: input.usageRights || null,
-    })
-    .select('*')
-    .single()
+  const { data, error } = await supabase.rpc('create_booking_from_rate_card', {
+    p_rate_card_id: input.rateCardItemId,
+    p_deadline: input.deadline || null,
+    p_usage_rights: input.usageRights || null,
+  })
   if (error) throw error
   return data as Booking
 }

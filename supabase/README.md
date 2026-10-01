@@ -1,4 +1,4 @@
-# Supabase — AInfluencer backend
+# Supabase — BrandJodo backend
 
 This folder *is* the backend: Postgres schema, Row Level Security, the booking
 state-machine RPCs, and the escrow auto-release job. There is no separate app

@@ -29,10 +29,16 @@ export function SocialLinksGate() {
     let active = true
     listSocialLinks(profileId)
       .then((links) => {
-        if (active) setNeedsLinks(links.length === 0)
+        if (active) {
+          setNeedsLinks(links.length === 0)
+          setFormError(null)
+        }
       })
-      // A failed check must never lock someone out of the app.
-      .catch(() => undefined)
+      .catch((error: unknown) => {
+        if (!active) return
+        setNeedsLinks(true)
+        setFormError(error instanceof Error ? error.message : 'Could not verify your social links.')
+      })
     return () => {
       active = false
     }

@@ -24,7 +24,7 @@ function formatDate(iso: string): string {
 // a SECURITY DEFINER RPC that only admins may call — and each row can be
 // resolved (action taken) or dismissed (no action).
 export function ReportsPage() {
-  usePageTitle('Moderation — AInfluencer')
+  usePageTitle('Moderation — BrandJodo')
   const [reports, setReports] = useState<OpenReportRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

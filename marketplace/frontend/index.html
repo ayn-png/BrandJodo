@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AInfluencer — Local Creator & Brand Marketplace</title>
+<title>BrandJodo — Local Creator & Brand Marketplace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -490,7 +490,7 @@
   <div class="header-inner">
     <a href="#" class="logo">
       <div class="logo-icon">A</div>
-      <div class="logo-text">AInfluencer <span>Marketplace</span></div>
+      <div class="logo-text">BrandJodo <span>Marketplace</span></div>
     </a>
 
     <div class="user-bar">
@@ -517,7 +517,7 @@
   <!-- 1. ONBOARDING & ROLE SETUP -->
   <section id="onboard" class="panel active">
     <div class="onboard-hero">
-      <h1>Welcome to AInfluencer Platform</h1>
+      <h1>Welcome to BrandJodo Platform</h1>
       <p>Select your role to register your profile or log in with your existing User ID.</p>
     </div>
 
@@ -718,7 +718,7 @@
 
 <script>
 const $ = id => document.getElementById(id);
-let activeUser = JSON.parse(localStorage.getItem('ainfluencer_user') || 'null');
+let activeUser = JSON.parse(localStorage.getItem('brandjodo_user') || 'null');
 let currentBookingIdForChat = null;
 
 // Tab Navigation
@@ -737,9 +737,10 @@ document.querySelectorAll('.nav-tabs button').forEach(btn => {
 function apiBase() { return $('apiBase').value.replace(/\/$/, ''); }
 
 async function api(method, path, body) {
+  const token = activeUser && activeUser.token;
   const res = await fetch(apiBase() + path, {
     method,
-    headers: {'Content-Type': 'application/json'},
+    headers: Object.assign({'Content-Type': 'application/json'}, token ? {'Authorization': 'Bearer ' + token} : {}),
     body: body === undefined ? undefined : JSON.stringify(body)
   });
   const data = await res.json();
@@ -781,7 +782,7 @@ function selectRole(role) {
 
 function setActiveUser(user) {
   activeUser = user;
-  localStorage.setItem('ainfluencer_user', JSON.stringify(user));
+  localStorage.setItem('brandjodo_user', JSON.stringify(user));
   updateActiveUserBadge();
 }
 
@@ -798,31 +799,35 @@ async function loginUser(inputId) {
 }
 
 async function loginUserById(id) {
+  alert('Use email and password login through the authenticated API.');
+}
+
+async function loginUserByCredentials(email, password) {
   try {
-    const user = await api('GET', `/api/users/${id}`);
-    setActiveUser(user);
-    alert(`Logged in as ${user.name} (${user.role})`);
+    const result = await api('POST', '/api/auth/login', {email, password});
+    setActiveUser(Object.assign(result.user, {token: result.token}));
+    alert(`Logged in as ${result.user.name} (${result.user.role})`);
     if (user.role === 'CLIENT') {
       document.querySelector('[data-tab="discover"]').click();
     } else {
       document.querySelector('[data-tab="bookings"]').click();
     }
   } catch (e) {
-    alert('User not found: ' + e.message);
+    alert('Login failed: ' + e.message);
   }
 }
 
 // Onboarding: Create Client
 async function createClient() {
   try {
-    const u = await api('POST', '/api/users', {
+    const result = await api('POST', '/api/users', {
       name: $('c_name').value,
       email: $('c_email').value,
-      role: 'CLIENT',
+      role: 'CLIENT', password: prompt('Choose a password (8+ characters):') || '',
       businessCategory: $('c_category').value
     });
-    setActiveUser(u);
-    showMsg('c_msg', `Business profile created successfully! Account ID: ${u.id}`, true);
+    setActiveUser(Object.assign(result.user, {token: result.token}));
+    showMsg('c_msg', `Business profile created successfully! Account ID: ${result.user.id}`, true);
     setTimeout(() => document.querySelector('[data-tab="discover"]').click(), 1200);
   } catch (e) { showMsg('c_msg', e.message, false); }
 }
@@ -830,11 +835,13 @@ async function createClient() {
 // Onboarding: Create Influencer
 async function createInfluencer() {
   try {
-    const u = await api('POST', '/api/users', {
+    const result = await api('POST', '/api/users', {
       name: $('i_name').value,
       email: $('i_email').value,
-      role: 'INFLUENCER'
+      role: 'INFLUENCER', password: prompt('Choose a password (8+ characters):') || ''
     });
+    const u = result.user;
+    setActiveUser(Object.assign(u, {token: result.token}));
     await api('POST', `/api/influencers/${u.id}/profile`, {
       bio: $('i_bio').value,
       location: $('i_location').value,

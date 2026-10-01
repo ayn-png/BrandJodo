@@ -11,7 +11,7 @@ import { COMPACT_PLURAL, formatNotificationTime, notificationHref } from '@/feat
 // bookings / messages / reviews / payouts. Visiting marks everything read; the
 // bell count comes from unread_notification_count(). Owned by sub-agent D.
 export function NotificationsPage() {
-  usePageTitle('Notifications — AInfluencer')
+  usePageTitle('Notifications — BrandJodo')
   const { profile } = useAuth()
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [error, setError] = useState<string | null>(null)

@@ -15,7 +15,8 @@ public class BookingHandlers {
         // Create booking request — POST /api/bookings
         // { clientId, influencerId, deliverable, deadline, usageRights, price }
         router.post("/api/bookings", (ex, params, body) -> {
-            User client = requireUser(store, str(body, "clientId"), User.Role.CLIENT);
+            User client = Router.requireAuthenticated(ex, store);
+            if (client.role != User.Role.CLIENT) throw new Router.ApiError(403, "Only clients can create bookings");
             User influencer = UserHandlers.requireInfluencer(store, str(body, "influencerId"));
             String deliverable = str(body, "deliverable");
             String deadline = str(body, "deadline");
@@ -32,6 +33,8 @@ public class BookingHandlers {
         // { action: ACCEPT|DECLINE|COUNTER, counterPrice?, counterNote? }
         router.post("/api/bookings/{id}/respond", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.influencerId)) throw new Router.ApiError(403, "Only the influencer can respond");
             requireStatus(b, Booking.Status.REQUESTED, Booking.Status.COUNTERED);
             String action = str(body, "action").toUpperCase();
             switch (action) {
@@ -52,6 +55,8 @@ public class BookingHandlers {
         // Client accepts a counter-offer — POST /api/bookings/{id}/accept-counter
         router.post("/api/bookings/{id}/accept-counter", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId)) throw new Router.ApiError(403, "Only the client can accept the counter-offer");
             requireStatus(b, Booking.Status.COUNTERED);
             b.status = Booking.Status.ACCEPTED;
             store.saveBooking(b);
@@ -61,10 +66,10 @@ public class BookingHandlers {
         // Chat — POST /api/bookings/{id}/messages  { senderId, text }
         router.post("/api/bookings/{id}/messages", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
-            String senderId = str(body, "senderId");
-            if (!senderId.equals(b.clientId) && !senderId.equals(b.influencerId)) {
-                throw new Router.ApiError(403, "senderId is not part of this booking");
-            }
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId) && !actor.id.equals(b.influencerId))
+                throw new Router.ApiError(403, "Only booking participants can send messages");
+            String senderId = actor.id;
             String text = str(body, "text");
             Message msg = new Message(store.nextId("msg"), b.id, senderId, text);
             b.messages.add(msg);
@@ -75,12 +80,17 @@ public class BookingHandlers {
         // Chat — GET /api/bookings/{id}/messages
         router.get("/api/bookings/{id}/messages", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId) && !actor.id.equals(b.influencerId))
+                throw new Router.ApiError(403, "Only booking participants can view messages");
             return b.messages.stream().map(Message::toMap).collect(Collectors.toList());
         });
 
         // Escrow: client funds — POST /api/bookings/{id}/pay
         router.post("/api/bookings/{id}/pay", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId)) throw new Router.ApiError(403, "Only the client can pay");
             requireStatus(b, Booking.Status.ACCEPTED);
             b.status = Booking.Status.FUNDED;
             b.escrowFunded = true;
@@ -92,6 +102,8 @@ public class BookingHandlers {
         // Influencer marks delivered — POST /api/bookings/{id}/deliver
         router.post("/api/bookings/{id}/deliver", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.influencerId)) throw new Router.ApiError(403, "Only the influencer can deliver");
             requireStatus(b, Booking.Status.FUNDED);
             b.status = Booking.Status.DELIVERED;
             b.deliveredAt = Instant.now();
@@ -103,6 +115,8 @@ public class BookingHandlers {
         // Client approves -> release escrow — POST /api/bookings/{id}/approve
         router.post("/api/bookings/{id}/approve", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId)) throw new Router.ApiError(403, "Only the client can approve");
             requireStatus(b, Booking.Status.DELIVERED);
             b.status = Booking.Status.COMPLETED;
             b.escrowReleased = true;
@@ -113,6 +127,8 @@ public class BookingHandlers {
         // Review — POST /api/bookings/{id}/review  { rating: 1-5, comment }
         router.post("/api/bookings/{id}/review", (ex, params, body) -> {
             Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId)) throw new Router.ApiError(403, "Only the client can review");
             requireStatus(b, Booking.Status.COMPLETED);
             if (b.clientReview != null) throw new Router.ApiError(400, "Booking already reviewed");
             int rating = ((Number) body.get("rating")).intValue();
@@ -125,12 +141,20 @@ public class BookingHandlers {
         });
 
         // Fetch single booking — GET /api/bookings/{id}
-        router.get("/api/bookings/{id}", (ex, params, body) ->
-                requireBooking(store, params.get("id")).toMap());
+        router.get("/api/bookings/{id}", (ex, params, body) -> {
+            Booking b = requireBooking(store, params.get("id"));
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(b.clientId) && !actor.id.equals(b.influencerId))
+                throw new Router.ApiError(403, "Only booking participants can view this booking");
+            return b.toMap();
+        });
 
         // All bookings for a user (client or influencer) — GET /api/users/{id}/bookings
-        router.get("/api/users/{id}/bookings", (ex, params, body) ->
-                store.bookingsForUser(params.get("id")).stream().map(Booking::toMap).collect(Collectors.toList()));
+        router.get("/api/users/{id}/bookings", (ex, params, body) -> {
+            User actor = Router.requireAuthenticated(ex, store);
+            if (!actor.id.equals(params.get("id"))) throw new Router.ApiError(403, "Only the account owner can view booking history");
+            return store.bookingsForUser(actor.id).stream().map(Booking::toMap).collect(Collectors.toList());
+        });
     }
 
     private static User requireUser(DataStore store, String id, User.Role role) {

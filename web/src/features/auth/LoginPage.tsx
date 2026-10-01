@@ -42,7 +42,7 @@ export function LoginPage() {
     <div className="mx-auto max-w-md">
       <Card>
         <h1 className="font-display text-3xl font-semibold text-ink">Log in</h1>
-        <p className="mt-1 text-sm text-gray-500">Welcome back to AInfluencer.</p>
+        <p className="mt-1 text-sm text-gray-500">Welcome back to BrandJodo.</p>
         <form className="mt-5 space-y-4" onSubmit={onSubmit} noValidate>
           {formError && <Alert kind="error">{formError}</Alert>}
           <Field label="Email" error={errors.email}>
@@ -68,7 +68,7 @@ export function LoginPage() {
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
-          New to AInfluencer?{' '}
+          New to BrandJodo?{' '}
           <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
             Create an account
           </Link>

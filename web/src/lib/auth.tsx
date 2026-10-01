@@ -7,6 +7,7 @@ import type { Profile } from '@/lib/types'
 
 interface AuthState {
   loading: boolean
+  authError: string | null
   session: Session | null
   user: User | null
   profile: Profile | null
@@ -20,29 +21,45 @@ const AuthContext = createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
 
   const loadProfile = async () => {
-    try {
-      setProfile(await getMyProfile())
-    } catch {
-      setProfile(null)
-    }
+    setProfile(await getMyProfile())
   }
 
   useEffect(() => {
     let active = true
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return
-      setSession(data.session)
-      if (data.session) await loadProfile()
-      setLoading(false)
-    })
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!active) return
+        setSession(data.session)
+        if (data.session) await loadProfile()
+        setAuthError(null)
+      })
+      .catch((error: unknown) => {
+        if (!active) return
+        setAuthError(error instanceof Error ? error.message : 'Could not connect to authentication.')
+        setSession(null)
+        setProfile(null)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, next) => {
       setSession(next)
-      if (next) await loadProfile()
-      else setProfile(null)
+      try {
+        if (next) {
+          await loadProfile()
+        } else {
+          setProfile(null)
+        }
+        setAuthError(null)
+      } catch (error: unknown) {
+        setAuthError(error instanceof Error ? error.message : 'Could not load your profile.')
+      }
     })
     return () => {
       active = false
@@ -53,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthState>(
     () => ({
       loading,
+      authError,
       session,
       user: session?.user ?? null,
       profile,
@@ -69,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       refreshProfile: loadProfile,
     }),
-    [loading, session, profile],
+    [loading, authError, session, profile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

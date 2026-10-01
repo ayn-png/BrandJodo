@@ -1,20 +1,20 @@
 import { Card, PageHeader } from '@/components/ui'
 import { LegalSection } from '@/features/legal/LegalSection'
 
-// Static Privacy Policy for AInfluencer (v1). India-first, prices in ₹, and
+// Static Privacy Policy for BrandJodo (v1). India-first, prices in ₹, and
 // payments are a SIMULATED escrow — no real money is processed yet.
 export function PrivacyPolicy() {
   return (
     <div className="space-y-6">
       <PageHeader
         title="Privacy Policy"
-        subtitle="How AInfluencer collects, uses, and protects your information. Last updated 5 September 2026."
+        subtitle="How BrandJodo collects, uses, and protects your information. Last updated 5 September 2026."
       />
       <Card className="space-y-6">
         <p className="text-sm leading-relaxed text-gray-600">
-          AInfluencer is a price-first marketplace that connects local businesses (clients) with
+          BrandJodo is a price-first marketplace that connects local businesses (clients) with
           local content creators (influencers) in India. This policy explains what data we handle
-          when you use the app. By using AInfluencer you agree to the practices described here.
+          when you use the app. By using BrandJodo you agree to the practices described here.
         </p>
 
         <LegalSection heading="Information we collect">
@@ -99,7 +99,7 @@ export function PrivacyPolicy() {
 
         <LegalSection heading="Children">
           <p>
-            AInfluencer is intended for users aged 18 and over. We do not knowingly collect data from
+            BrandJodo is intended for users aged 18 and over. We do not knowingly collect data from
             children. If you believe a minor has created an account, please contact us.
           </p>
         </LegalSection>
@@ -115,7 +115,7 @@ export function PrivacyPolicy() {
         <LegalSection heading="Contact and disputes">
           <p>
             For privacy questions or data requests, email{' '}
-            <span className="font-medium text-gray-700">support@ainfluencer.app</span>. For issues
+            <span className="font-medium text-gray-700">support@brandjodo.app</span>. For issues
             with a specific booking, use the in-app dispute option on that booking so both parties and
             our team have the full context.
           </p>

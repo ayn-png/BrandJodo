@@ -319,11 +319,54 @@ returns public.reports
 language plpgsql security definer set search_path = public as $$
 declare rep public.reports;
 begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
   if p_target_type not in ('PROFILE','BOOKING','MESSAGE','REVIEW') then
     raise exception 'Invalid target type';
   end if;
+  if not (
+    (p_target_type = 'PROFILE' and exists (
+      select 1 from public.profiles where id = p_target_id
+    ))
+    or (p_target_type = 'BOOKING' and exists (
+      select 1 from public.bookings
+      where id = p_target_id
+        and (client_id = auth.uid() or influencer_id = auth.uid())
+    ))
+    or (p_target_type = 'MESSAGE' and exists (
+      select 1
+      from public.messages m
+      join public.bookings b on b.id = m.booking_id
+      where m.id = p_target_id
+        and (b.client_id = auth.uid() or b.influencer_id = auth.uid())
+    ))
+    or (p_target_type = 'REVIEW' and exists (
+      select 1
+      from public.reviews r
+      join public.bookings b on b.id = r.booking_id
+      where r.id = p_target_id
+        and (b.client_id = auth.uid() or b.influencer_id = auth.uid())
+    ))
+  ) then
+    raise exception 'Report target not found or not accessible';
+  end if;
   if char_length(p_reason) < 10 then
     raise exception 'Please add a bit more detail (min 10 characters).';
+  end if;
+  if (select count(*) from public.reports
+      where reporter_id = auth.uid()
+        and created_at > now() - interval '1 hour') >= 20 then
+    raise exception 'Report rate limit exceeded; try again later';
+  end if;
+  if exists (
+    select 1 from public.reports
+    where reporter_id = auth.uid()
+      and target_type = p_target_type
+      and target_id = p_target_id
+      and status = 'OPEN'
+  ) then
+    raise exception 'An open report already exists for this target';
   end if;
   insert into public.reports (reporter_id, target_type, target_id, reason)
   values (auth.uid(), p_target_type, p_target_id, p_reason)

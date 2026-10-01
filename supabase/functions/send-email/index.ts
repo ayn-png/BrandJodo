@@ -35,7 +35,7 @@ async function sendViaResend(row: OutboxRow): Promise<boolean> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'AInfluencer <no-reply@ainfluencer.in>',
+      from: 'BrandJodo <no-reply@brandjodo.in>',
       to: [row.email],
       subject: row.subject,
       text: row.body,

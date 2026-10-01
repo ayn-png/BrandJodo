@@ -41,13 +41,20 @@ const client = new pg.Client({
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
-  ssl: { rejectUnauthorized: false },
+  ssl: process.env.PGSSLROOTCERT
+    ? { rejectUnauthorized: true, ca: await readFile(process.env.PGSSLROOTCERT, 'utf8') }
+    : process.env.NODE_ENV === 'development'
+      ? { rejectUnauthorized: false }
+      : { rejectUnauthorized: true },
 })
+let migrationLockHeld = false
 
 const run = async () => {
   await client.connect()
   const port = process.env.PGPORT ?? 5432
   console.log(`Connected to ${process.env.PGHOST}:${port}/${process.env.PGDATABASE}`)
+  await client.query('select pg_advisory_lock(hashtextextended($1, 0))', ['brandjodo-schema-migrations'])
+  migrationLockHeld = true
 
   await client.query(`
     create table if not exists public.schema_migrations (
@@ -149,4 +156,14 @@ run()
     console.error('\nMigration stopped:', err.message)
     process.exitCode = 1
   })
-  .finally(() => client.end())
+  .finally(async () => {
+    try {
+      if (migrationLockHeld) {
+        await client.query('select pg_advisory_unlock(hashtextextended($1, 0))', [
+          'brandjodo-schema-migrations',
+        ])
+      }
+    } finally {
+      await client.end()
+    }
+  })
