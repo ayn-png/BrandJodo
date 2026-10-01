@@ -4,7 +4,12 @@
 
 The React application is deployed to Vercel from [`web/`](./web/). Supabase remains
 the production database, authentication, storage, realtime, and Edge Function
-platform. The Vercel project root must be set to `web`.
+platform. Vercel supports either of these project configurations:
+
+- **Recommended:** set the Vercel Root Directory to `web`; this uses
+  [`web/vercel.json`](./web/vercel.json).
+- **Repository root:** leave Root Directory blank; the root
+  [`vercel.json`](./vercel.json) builds and publishes the `web` application.
 
 ## Production environment configuration
 
@@ -21,7 +26,8 @@ Only the Supabase `anon` key belongs in the browser bundle. Never add
 Vercel tokens to Vercel client variables or source control.
 
 Vercel routing, SPA fallback, immutable asset caching, and baseline security
-headers are defined in [`web/vercel.json`](./web/vercel.json).
+headers are defined in [`web/vercel.json`](./web/vercel.json) and mirrored in the
+root [`vercel.json`](./vercel.json) for repository-root projects.
 
 ## Build and deployment configuration
 
